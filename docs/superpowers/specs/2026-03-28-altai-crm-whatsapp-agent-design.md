@@ -355,9 +355,9 @@ interés real de compra.
 - A ~20 minutos de la zona hotelera
 - Sobre Av. Chacmool, avenida principal que cruza todo Cancún
 - Salida a Av. Huayacán (hacia zona hotelera) y a Av. Colosio (hacia el centro)
-- Hospitales cercanos: [POR CONFIRMAR]
-- Escuelas cercanas: [POR CONFIRMAR]
-- Plazas comerciales: [POR CONFIRMAR]
+- Hospitales cercanos: Instituto de Salud Visual (ISVI) sobre Av. Huayacán; Centro Médico en Av. Huayacán SM 316 (cerca de Palmaris); Hospital Galenia y Hospiten Cancún a ~15 min
+- Escuelas cercanas: Colegio Creativos Cancún (sobre Av. Huayacán, #1 en educación básica en Cancún, bilingüe); VKS Victoria's School (sobre Av. Huayacán, preescolar a secundaria bilingüe); Escuela Paalil Kin (Av. Huayacán, Valle Real)
+- Plazas comerciales: Plaza Cumbres (entre Av. Huayacán y Colosio, muy cerca); Plaza Hive Cancún (sobre Av. Huayacán SMZ 336); Plaza Aria Huayacán
 
 ## AMENIDADES DE ALTAI RESIDENCIAL
 
