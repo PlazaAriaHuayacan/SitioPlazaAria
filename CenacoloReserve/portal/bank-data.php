@@ -50,10 +50,7 @@ $hasBank = !empty($concierge['bank_clabe']);
         <?php if (!$hasBank): ?>
         <div class="bg-yellow-900/30 border border-yellow-600/40 rounded-xl px-5 py-4 mb-6 flex items-start gap-3">
             <svg class="w-5 h-5 text-yellow-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-            <div>
-                <p class="text-yellow-300 font-semibold text-sm">Sin datos bancarios</p>
-                <p class="text-yellow-400/80 text-xs mt-0.5">Sin tu CLABE no podremos procesar tu comisión. Regístrala a continuación.</p>
-            </div>
+            <p class="text-yellow-300 text-sm font-medium">Sin datos bancarios no podremos procesar tu comisión.</p>
         </div>
         <?php endif; ?>
 
@@ -69,6 +66,7 @@ $hasBank = !empty($concierge['bank_clabe']);
                            value="<?= resSanitize($concierge['bank_name'] ?? '') ?>"
                            placeholder="Ej: BBVA, Banamex, Banorte..."
                            maxlength="100"
+                           required
                            class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-gold-500 transition-colors text-sm">
                 </div>
 
@@ -99,6 +97,7 @@ $hasBank = !empty($concierge['bank_clabe']);
                            value="<?= resSanitize($concierge['bank_holder'] ?? '') ?>"
                            placeholder="Nombre completo tal como aparece en la cuenta"
                            maxlength="255"
+                           required
                            class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-gold-500 transition-colors text-sm">
                 </div>
 
@@ -139,6 +138,21 @@ $hasBank = !empty($concierge['bank_clabe']);
                 bank_account: document.getElementById('bank_account').value.trim(),
                 bank_holder:  document.getElementById('bank_holder').value.trim(),
             };
+
+            if (!payload.bank_name || !payload.bank_holder) {
+                alertBox.textContent = '✗ Banco y Nombre del Titular son requeridos.';
+                alertBox.className = 'mb-4 px-4 py-3 rounded-lg text-sm font-medium bg-red-900/40 border border-red-600/40 text-red-300';
+                btn.disabled = false;
+                btn.textContent = 'Guardar Datos Bancarios';
+                return;
+            }
+            if (payload.bank_clabe.length !== 18) {
+                alertBox.textContent = '✗ La CLABE debe tener exactamente 18 dígitos.';
+                alertBox.className = 'mb-4 px-4 py-3 rounded-lg text-sm font-medium bg-red-900/40 border border-red-600/40 text-red-300';
+                btn.disabled = false;
+                btn.textContent = 'Guardar Datos Bancarios';
+                return;
+            }
 
             try {
                 const res  = await fetch('<?= resUrl('/api/bank-data.php') ?>', {
