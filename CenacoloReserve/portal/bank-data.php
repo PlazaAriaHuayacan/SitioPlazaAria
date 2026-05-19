@@ -48,7 +48,7 @@ $hasBank = !empty($concierge['bank_clabe']);
         <p class="text-slate-400 text-sm mb-6">Registra tu CLABE para recibir tus comisiones vía SPEI.</p>
 
         <?php if (!$hasBank): ?>
-        <div class="bg-yellow-900/30 border border-yellow-600/40 rounded-xl px-5 py-4 mb-6 flex items-start gap-3">
+        <div id="noBankWarning" class="bg-yellow-900/30 border border-yellow-600/40 rounded-xl px-5 py-4 mb-6 flex items-start gap-3">
             <svg class="w-5 h-5 text-yellow-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
             <p class="text-yellow-300 text-sm font-medium">Sin datos bancarios no podremos procesar tu comisión.</p>
         </div>
@@ -78,6 +78,7 @@ $hasBank = !empty($concierge['bank_clabe']);
                            maxlength="18"
                            pattern="\d{18}"
                            inputmode="numeric"
+                           required
                            class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-gold-500 transition-colors text-sm font-mono tracking-widest">
                     <p id="clabeCounter" class="text-xs text-slate-600 mt-1"><span id="clabeLen">0</span>/18 dígitos</p>
                 </div>
@@ -115,12 +116,14 @@ $hasBank = !empty($concierge['bank_clabe']);
         // Contador de dígitos CLABE
         const clabeInput = document.getElementById('bank_clabe');
         const clabeLen   = document.getElementById('clabeLen');
-        clabeInput.addEventListener('input', () => {
+        const updateClabeCounter = () => {
             const digits = clabeInput.value.replace(/\D/g, '');
             clabeInput.value = digits.slice(0, 18);
             clabeLen.textContent = clabeInput.value.length;
             clabeLen.className = clabeInput.value.length === 18 ? 'text-green-400' : 'text-slate-600';
-        });
+        };
+        clabeInput.addEventListener('input', updateClabeCounter);
+        updateClabeCounter(); // seed counter for pre-populated values
 
         // Submit
         document.getElementById('bankForm').addEventListener('submit', async (e) => {
@@ -165,8 +168,7 @@ $hasBank = !empty($concierge['bank_clabe']);
                 if (json.success) {
                     alertBox.textContent = '✓ ' + json.message;
                     alertBox.className = 'mb-4 px-4 py-3 rounded-lg text-sm font-medium bg-green-900/40 border border-green-600/40 text-green-300';
-                    // Ocultar banner de advertencia si existía
-                    const warn = document.querySelector('.bg-yellow-900\\/30');
+                    const warn = document.getElementById('noBankWarning');
                     if (warn) warn.style.display = 'none';
                 } else {
                     alertBox.textContent = '✗ ' + (json.error || 'Error desconocido');
