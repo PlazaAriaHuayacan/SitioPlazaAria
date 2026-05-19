@@ -113,9 +113,11 @@ $commissions = $stmt->fetchAll();
                         <td class="px-4 py-3 text-slate-300"><?= resSanitize($c['restaurant_name']) ?></td>
                         <td class="px-4 py-3 text-white font-medium"><?= resSanitize($c['guest_name']) ?></td>
                         <td class="px-4 py-3">
-                            <span class="text-xs px-2 py-0.5 rounded-full <?= $c['commission_type'] === 'fixed' ? 'bg-blue-900/40 text-blue-300' : 'bg-purple-900/40 text-purple-300' ?>">
-                                <?= $c['commission_type'] === 'fixed' ? 'Fija' : 'Porcentaje' ?>
-                            </span>
+                            <?php
+                                $typeLabel = match($c['commission_type']) { 'fixed' => 'Fija', 'percentage' => 'Porcentaje', default => resSanitize($c['commission_type']) };
+                                $typeCss   = $c['commission_type'] === 'fixed' ? 'bg-blue-900/40 text-blue-300' : 'bg-purple-900/40 text-purple-300';
+                            ?>
+                            <span class="text-xs px-2 py-0.5 rounded-full <?= $typeCss ?>"><?= $typeLabel ?></span>
                         </td>
                         <td class="px-4 py-3 font-semibold <?= $c['commission_amount'] !== null ? 'text-white' : 'text-slate-500 italic' ?>">
                             <?= $c['commission_amount'] !== null ? '$' . number_format($c['commission_amount'], 2) : 'Por liquidar' ?>
@@ -128,7 +130,7 @@ $commissions = $stmt->fetchAll();
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-3 text-slate-400 text-xs">
-                            <?= $c['paid_at'] ? date('d/m/Y H:i', strtotime($c['paid_at'])) : '—' ?>
+                            <?= !empty($c['paid_at']) ? date('d/m/Y H:i', strtotime($c['paid_at'])) : '—' ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
