@@ -1,7 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return isMobile;
+}
 import { EspecsDisponible } from './panel/EspecsDisponible';
 import { EspecsOcupado } from './panel/EspecsOcupado';
 import type { UnidadComercialAgrupada } from '@/lib/plano/agrupar';
@@ -12,6 +25,12 @@ type Props = {
 };
 
 export function PanelLateral({ unidad, onClose }: Props) {
+  const isMobile = useIsMobile();
+
+  const initial = isMobile ? { y: '100%' } : { x: '100%' };
+  const animate = { x: 0, y: 0 };
+  const exit = isMobile ? { y: '100%' } : { x: '100%' };
+
   // Escape key + body scroll lock while open
   useEffect(() => {
     if (!unidad) return;
@@ -42,20 +61,29 @@ export function PanelLateral({ unidad, onClose }: Props) {
             aria-hidden
           />
 
-          {/* Panel — desktop: slides from right; mobile: full-width */}
+          {/* Panel — desktop: slides from right; mobile: bottom sheet */}
           <motion.aside
             role="dialog"
             aria-modal="true"
             aria-label={`Detalles de ${unidad.nombre || 'Local ' + unidad.loteIds.join('-')}`}
-            initial={{ x: '100%', y: 0 }}
-            animate={{ x: 0, y: 0 }}
-            exit={{ x: '100%' }}
+            initial={initial}
+            animate={animate}
+            exit={exit}
             transition={{ type: 'spring', damping: 28, stiffness: 240 }}
             className={
-              'fixed top-0 right-0 z-50 h-full w-full md:w-[460px] lg:w-[520px] ' +
-              'bg-aria-bone shadow-cardHover overflow-y-auto'
+              'fixed z-50 bg-aria-bone shadow-cardHover overflow-y-auto ' +
+              (isMobile
+                ? 'inset-x-0 bottom-0 top-[10vh] rounded-t-card'
+                : 'top-0 right-0 h-full w-[460px] lg:w-[520px]')
             }
           >
+            {/* Grip handle — mobile only */}
+            {isMobile && (
+              <div className="flex justify-center pt-3 pb-1" aria-hidden>
+                <div className="h-1 w-12 rounded-full bg-aria-line" />
+              </div>
+            )}
+
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-aria-line/60 bg-aria-bone/95 backdrop-blur px-6 py-4">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.18em] text-aria-slate font-medium">
