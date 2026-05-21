@@ -66,7 +66,8 @@ async function main() {
     console.log(`  gapsGiros: [${cfg.gapsGiros.join(', ')}]`);
     console.log(`  aforoEstimado: ${cfg.aforoEstimado ?? '(empty)'}`);
     console.log(`  cajonesEstacionamiento: ${cfg.cajonesEstacionamiento ?? '(empty)'}`);
-    console.log(`  demografia: ${cfg.demografia ? cfg.demografia.substring(0, 60) + '...' : '(empty)'}`);
+    console.log(`  demografia.fuente: ${cfg.demografia?.fuente ?? '(empty)'}`);
+    console.log(`  demografia.ingresoPromedioMXN: ${cfg.demografia?.ingresoPromedioMXN ?? '(empty)'}`);
   }
 
   header('SMOKE TEST PASSED');

@@ -56,6 +56,10 @@ export interface Local {
   estado: EstadoLocal;
   piso: Piso;
   numeroLocal: string;
+  /** Architectural unit grouping — multiple lots sharing this value render as one block on the plano. */
+  unidadComercial: string;
+  /** Left-to-right order on the piso (1 = leftmost). */
+  ordenPlano?: number;
   // Floor plan coords (used in Fase 2; surfaced now so the schema is stable)
   coord?: { x: number; y: number; ancho: number; alto: number };
   // Leasing fields — only populated when estado === 'Disponible'
@@ -97,13 +101,24 @@ export interface Evento {
   linkReservar?: string;
 }
 
+export interface Demografia {
+  ingresoPromedioMXN?: number;
+  edadMediana?: number;
+  nucleosFamiliares?: number;
+  densidadHabitantesKm2?: number;
+  /** Parsed from a newline-separated text field. */
+  fraccionamientos?: string[];
+  accesosDescripcion?: string;
+  fuente?: string;
+}
+
 export interface Config {
   heroVideoURL?: string;
   fotosGenerales: Foto[];
   gapsGiros: string[];
   aforoEstimado?: number;
   cajonesEstacionamiento?: number;
-  demografia?: string;
+  demografia?: Demografia;
 }
 
 export interface LeadRenta {
