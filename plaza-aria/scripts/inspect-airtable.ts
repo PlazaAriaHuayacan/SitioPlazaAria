@@ -64,7 +64,7 @@ async function main() {
   for (const name of candidates) {
     const r = await fetchOne(name);
     if ('error' in r) {
-      console.log(`✗ "${name}": ${r.error.substring(0, 120)}`);
+      console.log(`✗ "${name}": ${r.error?.substring(0, 120) ?? ''}`);
     } else {
       console.log(`✓ "${name}": ${r.records.length} records`);
       if (r.records[0]) {
