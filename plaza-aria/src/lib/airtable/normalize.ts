@@ -122,7 +122,9 @@ export function normalizeLocal(raw: { id: string; fields: RawFields }): Local {
     logo,
     descripcion: (f.Descripcion as string) ?? '',
     horarios: buildHorarios(f),
-    whatsapp: f.Whatsapp as string | undefined,
+    // NOTE: The Airtable field is named "Whastapp" (typo in the live base).
+    // We honour the misspelling as-is rather than renaming the field in Airtable.
+    whatsapp: f.Whastapp as string | undefined,
     telefono: f.Telefono as string | undefined,
     instagram: f.Instagram as string | undefined,
     menuPDF: f.MenuPDF as string | undefined,
@@ -153,7 +155,7 @@ export function normalizeEvento(
     horaInicio: (f.HoraInicio as string) ?? '',
     horaFin: (f.HoraFin as string) ?? '',
     cupo: f.Cupo as number | undefined,
-    descripcion: (f.Descripcion as string) ?? '',
+    descripcion: (f['Descripción'] as string) ?? '',
     foto: firstFoto(f.Foto as RawAttachment[]),
     linkReservar: f.LinkReservar as string | undefined,
   };

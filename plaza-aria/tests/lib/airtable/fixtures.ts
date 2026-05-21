@@ -19,7 +19,7 @@ export const rawLocalOcupado = {
     HorarioViernes: '08:00-22:00',
     HorarioSabado: '08:00-22:00',
     HorarioDomingo: '',
-    Whatsapp: '+529981234567',
+    Whastapp: '+529981234567', // typo preserved from live base
     Instagram: 'cafe_aria',
     Instalaciones: ['Agua', 'Luz', 'A/C', 'Drenaje'],
   },
@@ -53,7 +53,7 @@ export const rawEvento = {
     HoraInicio: '07:00',
     HoraFin: '08:00',
     Cupo: 12,
-    Descripcion: 'Spinning intermedio.',
+    'Descripción': 'Spinning intermedio.',
     Foto: [{ url: 'https://x/spin.jpg' }],
     LinkReservar: 'https://wa.me/529981234567',
   },

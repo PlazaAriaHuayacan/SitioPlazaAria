@@ -15,7 +15,7 @@ export type Giro =
   | 'Servicios'
   | 'Otro';
 
-export type EstadoLocal = 'Ocupado' | 'Disponible' | 'Próximamente';
+export type EstadoLocal = 'Ocupado' | 'Disponible' | 'Proximamente';
 
 export type Piso = '1' | '2';
 

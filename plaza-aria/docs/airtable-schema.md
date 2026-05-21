@@ -17,7 +17,7 @@ This document defines the structure of the Airtable base that powers the Plaza A
 | `Nombre` | Single line text | Public-facing name of the business or "DISPONIBLE" if vacant. |
 | `Slug` | Formula | `LOWER(SUBSTITUTE({Nombre}, " ", "-"))` — used for URL paths. Override manually for special cases. |
 | `Giro` | Single select | Options: `Restaurante`, `Belleza`, `Fitness`, `Educación`, `Hogar`, `Servicios`, `Otro`. |
-| `Estado` | Single select | Options: `Ocupado`, `Disponible`, `Próximamente`. |
+| `Estado` | Single select | Options: `Ocupado`, `Disponible`, `Proximamente`. |
 | `Piso` | Single select | Options: `1`, `2`. |
 | `NumeroLocal` | Single line text | E.g. `A-12`, `B-04`. |
 | `CoordX` | Number | X position on the floor plan SVG (px). Used in Fase 2. |
@@ -38,7 +38,7 @@ This document defines the structure of the Airtable base that powers the Plaza A
 | `HorarioViernes` | Single line text | Same format. |
 | `HorarioSabado` | Single line text | Same format. |
 | `HorarioDomingo` | Single line text | Same format. |
-| `Whatsapp` | Phone | E.164 format preferred (`+52998…`). |
+| `Whatsapp` | Phone | E.164 format preferred (`+52998…`). ⚠️ stored as `Whastapp` in base — typo preserved |
 | `Telefono` | Phone | Optional secondary number. |
 | `Instagram` | Single line text | Handle without `@` (e.g., `plaza_aria`). |
 | `MenuPDF` | URL | Direct link to a public menu PDF. Optional. |
@@ -57,7 +57,7 @@ This document defines the structure of the Airtable base that powers the Plaza A
 | `HoraInicio` | Single line text | `HH:MM`. |
 | `HoraFin` | Single line text | `HH:MM`. |
 | `Cupo` | Number | Optional. |
-| `Descripcion` | Long text | Public. |
+| `Descripción` | Long text | Public. |
 | `Foto` | Attachment | Single image. |
 | `LinkReservar` | URL | WhatsApp / IG / external. |
 
