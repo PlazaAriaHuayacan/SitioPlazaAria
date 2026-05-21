@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+
 import { Edificio } from './svg/Edificio';
 import { Decoraciones } from './svg/Decoraciones';
 import { Bloque } from './Bloque';
@@ -46,6 +47,7 @@ export function PlanoInteractivo({
   const [hoveredUnidad, setHoveredUnidad] = useState<UnidadComercialAgrupada | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [selectedUnidad, setSelectedUnidad] = useState<UnidadComercialAgrupada | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const byId = useMemo(() => new Map(unidades.map((u) => [u.id, u])), [unidades]);
@@ -53,6 +55,13 @@ export function PlanoInteractivo({
   const handleHover = (id: string | null) => {
     setHoveredUnidad(id ? (byId.get(id) ?? null) : null);
     onUnidadHover?.(id);
+  };
+
+  const handleSelect = (id: string) => {
+    setHasInteracted(true);
+    const u = byId.get(id);
+    setSelectedUnidad(u ?? null);
+    onUnidadSelect?.(id);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -96,7 +105,7 @@ export function PlanoInteractivo({
             type="button"
             role="tab"
             aria-selected={piso === p}
-            onClick={() => setPiso(p)}
+            onClick={() => { setPiso(p); setHasInteracted(true); }}
             className={
               'px-4 py-2 text-xs font-medium transition ' +
               (piso === p
@@ -109,11 +118,26 @@ export function PlanoInteractivo({
         ))}
       </div>
 
-      <div className="w-full overflow-x-auto">
+      {/* Scroll hint — mobile only, fades in after 2.5 s, hides once user interacts */}
+      {!hasInteracted && (
+        <motion.p
+          className="absolute top-16 left-3 z-10 md:hidden text-xs text-aria-slate flex items-center gap-1 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2.5, duration: 0.5 }}
+        >
+          <span aria-hidden>←</span>
+          arrastra para explorar
+          <span aria-hidden>→</span>
+        </motion.p>
+      )}
+
+      <div className="w-full overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0">
         <svg
           viewBox="0 0 1400 800"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto max-w-page"
+          className="h-auto max-w-page"
+          style={{ width: '100%', minWidth: 700 }}
           role="img"
           aria-label={`Plano interactivo de Plaza Aria, Piso ${piso}`}
         >
@@ -189,11 +213,7 @@ export function PlanoInteractivo({
                           layout={b}
                           yOffset={yOffset}
                           isHighlighted={selectedUnidadId === b.unidad.id || selectedUnidad?.id === b.unidad.id}
-                          onClick={(id) => {
-                            const u = byId.get(id);
-                            setSelectedUnidad(u ?? null);
-                            onUnidadSelect?.(id);
-                          }}
+                          onClick={handleSelect}
                           onHoverChange={handleHover}
                         />
                       </motion.g>
