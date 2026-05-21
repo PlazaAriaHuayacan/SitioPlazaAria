@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { listLocales, listEventos } from '@/lib/airtable/client';
-import { LocalCard } from '@/components/directorio/LocalCard';
+import { PlanoInteractivo } from '@/components/plano/PlanoInteractivo';
+import { agruparPorUnidad } from '@/lib/plano/agrupar';
 import type { Local, Evento } from '@/types/domain';
 
 export const revalidate = 300; // ISR every 5 min
@@ -34,12 +35,14 @@ export default async function RentaPage() {
 
   const now = new Date();
 
-  const disponibles = locales.filter((l) => l.estado === 'Disponible');
-  const totalLocales = locales.length;
+  const unidades = agruparPorUnidad(locales);
+
+  const disponibles = unidades.filter((u) => u.estado === 'Disponible');
+  const totalLocales = unidades.length;
 
   // Count negocios activos (non-disponible, non-proximamente)
-  const negociosActivos = locales.filter(
-    (l) => l.estado !== 'Disponible' && l.estado !== 'Proximamente',
+  const negociosActivos = unidades.filter(
+    (u) => u.estado !== 'Disponible' && u.estado !== 'Proximamente',
   ).length;
 
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -55,7 +58,11 @@ export default async function RentaPage() {
   // Minimum renta among disponibles (rounded to nearest 1000)
   const rawMin =
     disponibles.length > 0
-      ? Math.min(...disponibles.map((l) => l.leasing?.renta ?? Infinity).filter(isFinite))
+      ? Math.min(
+          ...disponibles
+            .map((u) => u.registroPrincipal.leasing?.renta ?? Infinity)
+            .filter(isFinite),
+        )
       : undefined;
   const minRenta =
     rawMin !== undefined && isFinite(rawMin)
@@ -154,39 +161,21 @@ export default async function RentaPage() {
         </div>
       </section>
 
-      {/* ── 3. Disponibles ────────────────────────────────────────────────── */}
+      {/* ── 3. Plano interactivo ──────────────────────────────────────────── */}
       <section id="disponibles" className="py-16 bg-aria-bone scroll-mt-20">
         <div className="container-aria">
-          <p className="eyebrow">Disponibles ahora</p>
-          <h2 className="mt-2 font-display text-3xl text-aria-ink">
-            Locales listos para tu apertura
+          <p className="eyebrow">El plano</p>
+          <h2 className="mt-2 font-display tracking-display text-4xl md:text-5xl text-aria-ink">
+            Explora Plaza Aria
           </h2>
-
-          {disponibles.length > 0 ? (
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {disponibles.map((local) => (
-                <LocalCard key={local.id} local={local} now={now} />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-8 card px-8 py-10 flex flex-col items-center text-center gap-4 max-w-md mx-auto">
-              <p className="font-display text-xl text-aria-ink">
-                Sin locales libres en este momento
-              </p>
-              <p className="text-aria-slate text-sm">
-                Apúntate a la lista y serás de los primeros en saber cuando
-                haya disponibilidad.
-              </p>
-              <a
-                href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola, quiero apuntarme a la lista de espera para un local en Plaza Aria.')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-              >
-                Unirse a la lista de espera
-              </a>
-            </div>
-          )}
+          <p className="mt-3 max-w-prose-aria text-aria-slate">
+            Haz click en un local para ver detalles. Los{' '}
+            <span className="text-aria-terracotta font-medium">resaltados en terracota</span>{' '}
+            están disponibles ahora mismo.
+          </p>
+          <div className="mt-10 rounded-card border border-aria-line/60 bg-white p-3 md:p-6 shadow-card">
+            <PlanoInteractivo unidades={unidades} />
+          </div>
         </div>
       </section>
 
@@ -214,8 +203,8 @@ export default async function RentaPage() {
       {/* ── 5. Próximamente strip ─────────────────────────────────────────── */}
       <div className="py-4 bg-aria-sand text-center">
         <p className="text-xs italic text-aria-slate">
-          Próximamente — plano interactivo, dashboard de zona y formulario por
-          local.
+          Próximamente — dashboard &ldquo;¿Por qué Aria?&rdquo; con demografía
+          detallada y formulario por local con envío automático de propuesta.
         </p>
       </div>
     </>
