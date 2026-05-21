@@ -16,12 +16,17 @@ type PageProps = { params: { slug: string } };
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const l = await getLocalBySlug(params.slug);
-  if (!l) return { title: 'No encontrado' };
-  return {
-    title: `${l.nombre} · ${l.giro} · Plaza Aria`,
-    description: l.descripcion || 'Negocio en Plaza Aria.',
-  };
+  try {
+    const l = await getLocalBySlug(params.slug);
+    if (!l) return { title: 'No encontrado' };
+    return {
+      title: `${l.nombre} · ${l.giro} · Plaza Aria`,
+      description: l.descripcion || 'Negocio en Plaza Aria.',
+    };
+  } catch (err) {
+    console.error('[/directorio/[slug]] metadata fetch failed:', err);
+    return { title: 'Plaza Aria' };
+  }
 }
 
 // ── Static params ─────────────────────────────────────────────────────────────
@@ -83,7 +88,10 @@ function VecinosSection({ current, all, now }: { current: Local; all: Local[]; n
 
 export default async function FichaPage({ params }: PageProps) {
   const [l, allLocales] = await Promise.all([
-    getLocalBySlug(params.slug),
+    getLocalBySlug(params.slug).catch((err) => {
+      console.error('[/directorio/[slug]] getLocalBySlug failed:', err);
+      return null;
+    }),
     listLocales().catch(() => [] as Local[]),
   ]);
 
