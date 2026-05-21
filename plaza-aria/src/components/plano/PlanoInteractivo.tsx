@@ -6,6 +6,7 @@ import { Edificio } from './svg/Edificio';
 import { Decoraciones } from './svg/Decoraciones';
 import { Bloque } from './Bloque';
 import { PlanoTooltip } from './PlanoTooltip';
+import { PanelLateral } from './PanelLateral';
 import { computeLayout } from '@/lib/plano/geometry';
 import type { UnidadComercialAgrupada } from '@/lib/plano/agrupar';
 
@@ -32,6 +33,7 @@ export function PlanoInteractivo({
   const [piso, setPiso] = useState<'1' | '2'>('1');
   const [hoveredUnidad, setHoveredUnidad] = useState<UnidadComercialAgrupada | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [selectedUnidad, setSelectedUnidad] = useState<UnidadComercialAgrupada | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const byId = useMemo(() => new Map(unidades.map((u) => [u.id, u])), [unidades]);
@@ -125,8 +127,12 @@ export function PlanoInteractivo({
                         key={b.unidad.id}
                         layout={b}
                         yOffset={yOffset}
-                        isHighlighted={selectedUnidadId === b.unidad.id}
-                        onClick={onUnidadSelect}
+                        isHighlighted={selectedUnidadId === b.unidad.id || selectedUnidad?.id === b.unidad.id}
+                        onClick={(id) => {
+                          const u = byId.get(id);
+                          setSelectedUnidad(u ?? null);
+                          onUnidadSelect?.(id);
+                        }}
                         onHoverChange={handleHover}
                       />
                     );
@@ -138,6 +144,7 @@ export function PlanoInteractivo({
       </div>
 
       <PlanoTooltip unidad={hoveredUnidad} position={mousePos} />
+      <PanelLateral unidad={selectedUnidad} onClose={() => setSelectedUnidad(null)} />
     </div>
   );
 }
