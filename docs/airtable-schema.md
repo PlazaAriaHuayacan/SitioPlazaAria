@@ -19,9 +19,11 @@ This document defines the structure of the Airtable base that powers the Plaza A
 | `Giro` | Single select | Options: `Restaurante`, `Belleza`, `Fitness`, `Educación`, `Hogar`, `Servicios`, `Otro`. |
 | `Estado` | Single select | Options: `Ocupado`, `Disponible`, `Proximamente`. |
 | `Piso` | Single select | Options: `1`, `2`. |
-| `NumeroLocal` | Single line text | E.g. `A-12`, `B-04`. |
-| `CoordX` | Number | X position on the floor plan SVG (px). Used in Fase 2. |
-| `CoordY` | Number | Y position on the floor plan SVG (px). Used in Fase 2. |
+| `NumeroLocal` | Single line text | Architectural lot ID. E.g. `L1`, `L6`, `L14`. One record per lot (L1–L31). |
+| `UnidadComercial` | Single line text | Groups lots rented together. E.g. `L1`, `L6-7`, `L16-17-18`. Records with the same value render as one block on the plano. Default = same as `NumeroLocal`. |
+| `OrdenPlano` | Number | Left-to-right order on the piso (1, 2, 3…). Controls plano layout. |
+| `CoordX` | Number | X position on the floor plan SVG (px). Used in Fase 2 plano isométrico. |
+| `CoordY` | Number | Y position on the floor plan SVG (px). Used in Fase 2 plano isométrico. |
 | `Ancho` | Number | Width on the floor plan SVG (px). Used in Fase 2. |
 | `Alto` | Number | Height on the floor plan SVG (px). Used in Fase 2. |
 | `M2` | Number | Total square meters. Visible publicly only if `Estado = Disponible`. |
