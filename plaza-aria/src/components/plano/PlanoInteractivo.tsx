@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Edificio } from './svg/Edificio';
 import { Decoraciones } from './svg/Decoraciones';
 import { Bloque } from './Bloque';
@@ -9,6 +9,17 @@ import { PlanoTooltip } from './PlanoTooltip';
 import { PanelLateral } from './PanelLateral';
 import { computeLayout } from '@/lib/plano/geometry';
 import type { UnidadComercialAgrupada } from '@/lib/plano/agrupar';
+
+const TIMING = {
+  decoracionesDuration: 0.6,
+  edificioDelay: 0.4,
+  edificioDuration: 0.8,
+  bloquesStartDelay: 1.4,
+  bloquesStaggerPerBloque: 0.04,
+  bloquesDuration: 0.4,
+  piso2ExtraDelay: 0.8,
+  corePulseDelay: 3.0,
+};
 
 type Props = {
   unidades: UnidadComercialAgrupada[];
@@ -30,6 +41,7 @@ export function PlanoInteractivo({
   onUnidadHover,
   selectedUnidadId = null,
 }: Props) {
+  const prefersReducedMotion = useReducedMotion();
   const [piso, setPiso] = useState<'1' | '2'>('1');
   const [hoveredUnidad, setHoveredUnidad] = useState<UnidadComercialAgrupada | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
@@ -105,8 +117,48 @@ export function PlanoInteractivo({
           role="img"
           aria-label={`Plano interactivo de Plaza Aria, Piso ${piso}`}
         >
-          <Decoraciones />
-          <Edificio />
+          <motion.g
+            initial={prefersReducedMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: TIMING.decoracionesDuration, ease: 'easeOut' }}
+          >
+            <Decoraciones />
+          </motion.g>
+
+          <motion.g
+            initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              duration: TIMING.edificioDuration,
+              delay: TIMING.edificioDelay,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            style={{ transformOrigin: '50% 80%' }}
+          >
+            <Edificio />
+          </motion.g>
+
+          {/* Central core pulse — gold glow after building is built */}
+          {!prefersReducedMotion && (
+            <motion.rect
+              x={655}
+              y={90}
+              width={90}
+              height={460}
+              rx={6}
+              fill="none"
+              stroke="#C99857"
+              strokeWidth={3}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.6, 0] }}
+              transition={{
+                delay: TIMING.corePulseDelay,
+                duration: 1.2,
+                ease: 'easeInOut',
+              }}
+              pointerEvents="none"
+            />
+          )}
 
           {/* Bloques shifted into the building's interior */}
           <g transform={`translate(${BUILDING_X_OFFSET}, 0)`}>
@@ -120,21 +172,31 @@ export function PlanoInteractivo({
               >
                 {visibleLayout
                   .filter((b) => b.type === 'bloque')
-                  .map((b) => {
+                  .map((b, idx) => {
                     if (b.type !== 'bloque') return null;
+                    const pisoOffset = piso === '2' ? TIMING.piso2ExtraDelay : 0;
+                    const delay = prefersReducedMotion
+                      ? 0
+                      : TIMING.bloquesStartDelay + pisoOffset + idx * TIMING.bloquesStaggerPerBloque;
                     return (
-                      <Bloque
+                      <motion.g
                         key={b.unidad.id}
-                        layout={b}
-                        yOffset={yOffset}
-                        isHighlighted={selectedUnidadId === b.unidad.id || selectedUnidad?.id === b.unidad.id}
-                        onClick={(id) => {
-                          const u = byId.get(id);
-                          setSelectedUnidad(u ?? null);
-                          onUnidadSelect?.(id);
-                        }}
-                        onHoverChange={handleHover}
-                      />
+                        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: TIMING.bloquesDuration, delay, ease: 'easeOut' }}
+                      >
+                        <Bloque
+                          layout={b}
+                          yOffset={yOffset}
+                          isHighlighted={selectedUnidadId === b.unidad.id || selectedUnidad?.id === b.unidad.id}
+                          onClick={(id) => {
+                            const u = byId.get(id);
+                            setSelectedUnidad(u ?? null);
+                            onUnidadSelect?.(id);
+                          }}
+                          onHoverChange={handleHover}
+                        />
+                      </motion.g>
                     );
                   })}
               </motion.g>
