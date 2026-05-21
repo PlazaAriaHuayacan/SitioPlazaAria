@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { PlanoInteractivo } from '@/components/plano/PlanoInteractivo';
 import type { UnidadComercialAgrupada } from '@/lib/plano/agrupar';
 
@@ -67,5 +68,16 @@ describe('PlanoInteractivo', () => {
     expect(screen.getByRole('tab', { name: 'Piso 1' })).toBeInTheDocument();
     // No bloques
     expect(screen.queryByTestId(/^bloque-/)).not.toBeInTheDocument();
+  });
+
+  it('shows tooltip information on hover for a disponible unit', async () => {
+    const user = userEvent.setup();
+    const u = makeUnidad({ id: 'L1', estado: 'Disponible', m2Total: 158.21, piso: '1' });
+    render(<PlanoInteractivo unidades={[u]} />);
+    await act(async () => {
+      await user.hover(screen.getByTestId('bloque-L1'));
+    });
+    // Look for the m² text — uniquely from the tooltip.
+    expect(await screen.findByText(/158\.2 m²/)).toBeInTheDocument();
   });
 });

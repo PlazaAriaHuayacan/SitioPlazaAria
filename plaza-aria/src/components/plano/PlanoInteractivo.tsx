@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edificio } from './svg/Edificio';
 import { Decoraciones } from './svg/Decoraciones';
 import { Bloque } from './Bloque';
+import { PlanoTooltip } from './PlanoTooltip';
 import { computeLayout } from '@/lib/plano/geometry';
 import type { UnidadComercialAgrupada } from '@/lib/plano/agrupar';
 
@@ -29,6 +30,22 @@ export function PlanoInteractivo({
   selectedUnidadId = null,
 }: Props) {
   const [piso, setPiso] = useState<'1' | '2'>('1');
+  const [hoveredUnidad, setHoveredUnidad] = useState<UnidadComercialAgrupada | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const byId = useMemo(() => new Map(unidades.map((u) => [u.id, u])), [unidades]);
+
+  const handleHover = (id: string | null) => {
+    setHoveredUnidad(id ? (byId.get(id) ?? null) : null);
+    onUnidadHover?.(id);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
 
   const unidadesPiso1 = useMemo(
     () => unidades.filter((u) => u.piso === '1'),
@@ -52,7 +69,7 @@ export function PlanoInteractivo({
   const yOffset = piso === '1' ? PISO1_Y : PISO2_Y;
 
   return (
-    <div className="relative w-full">
+    <div ref={containerRef} className="relative w-full" onMouseMove={handleMouseMove}>
       {/* Floor toggle */}
       <div
         className="absolute top-3 left-3 z-10 inline-flex rounded-pill border border-aria-line bg-white shadow-card overflow-hidden"
@@ -110,7 +127,7 @@ export function PlanoInteractivo({
                         yOffset={yOffset}
                         isHighlighted={selectedUnidadId === b.unidad.id}
                         onClick={onUnidadSelect}
-                        onHoverChange={onUnidadHover}
+                        onHoverChange={handleHover}
                       />
                     );
                   })}
@@ -119,6 +136,8 @@ export function PlanoInteractivo({
           </g>
         </svg>
       </div>
+
+      <PlanoTooltip unidad={hoveredUnidad} position={mousePos} />
     </div>
   );
 }
