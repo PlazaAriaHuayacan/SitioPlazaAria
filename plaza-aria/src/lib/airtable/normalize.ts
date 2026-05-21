@@ -116,6 +116,8 @@ export function normalizeLocal(raw: { id: string; fields: RawFields }): Local {
     estado,
     piso: (f.Piso ?? '1') as Piso,
     numeroLocal: (f.NumeroLocal as string) ?? '',
+    unidadComercial: (f.UnidadComercial as string) || (f.NumeroLocal as string) || '',
+    ordenPlano: typeof f.OrdenPlano === 'number' ? f.OrdenPlano : undefined,
     coord,
     leasing,
     fotos,
@@ -180,6 +182,17 @@ export function normalizeConfig(raw: { id: string; fields: RawFields }): Config 
     gapsGiros,
     aforoEstimado: f.AforoEstimado as number | undefined,
     cajonesEstacionamiento: f.CajonesEstacionamiento as number | undefined,
-    demografia: f.Demografia as string | undefined,
+    demografia: {
+      ingresoPromedioMXN: typeof f.IngresoPromedioMXN === 'number' ? f.IngresoPromedioMXN : undefined,
+      edadMediana: typeof f.EdadMediana === 'number' ? f.EdadMediana : undefined,
+      nucleosFamiliares: typeof f.NucleosFamiliares === 'number' ? f.NucleosFamiliares : undefined,
+      densidadHabitantesKm2: typeof f.DensidadHabitantesKm2 === 'number' ? f.DensidadHabitantesKm2 : undefined,
+      fraccionamientos:
+        typeof f.FraccionamientosCercanos === 'string'
+          ? f.FraccionamientosCercanos.split('\n').map((s: string) => s.trim()).filter(Boolean)
+          : [],
+      accesosDescripcion: typeof f.AccesosDescripcion === 'string' ? f.AccesosDescripcion : undefined,
+      fuente: typeof f.DemografiaFuente === 'string' ? f.DemografiaFuente : undefined,
+    },
   };
 }
