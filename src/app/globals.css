@@ -2,26 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-aria-bone text-aria-ink font-body antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  /* Display headlines use the serif with tighter tracking. */
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+    @apply tracking-display;
+  }
+
+  /* Smooth, non-distracting focus rings (keyboard only). */
+  :focus-visible {
+    @apply outline-none ring-2 ring-aria-terracotta ring-offset-2 ring-offset-aria-bone;
+  }
+
+  ::selection {
+    @apply bg-aria-terracotta/20 text-aria-ink;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
+@layer components {
+  /* Pill button — primary CTA */
+  .btn-primary {
+    @apply inline-flex items-center justify-center
+           rounded-pill bg-aria-terracotta px-6 py-3
+           text-base font-medium text-aria-bone
+           shadow-sm transition
+           hover:bg-aria-terracottaDark
+           focus-visible:ring-aria-terracotta
+           active:translate-y-px;
+  }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .btn-secondary {
+    @apply inline-flex items-center justify-center
+           rounded-pill border border-aria-ink/15 bg-transparent
+           px-6 py-3 text-base font-medium text-aria-ink
+           transition
+           hover:border-aria-ink/40 hover:bg-aria-ink/5
+           active:translate-y-px;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-1.5
+           text-sm font-medium text-aria-slate
+           transition
+           hover:text-aria-ink;
+  }
+
+  .card {
+    @apply rounded-card bg-white shadow-card
+           transition-shadow duration-300 ease-aria
+           hover:shadow-cardHover;
+  }
+
+  /* Section container — keeps content within page width with generous padding. */
+  .container-aria {
+    @apply mx-auto max-w-page px-5 sm:px-8 lg:px-12;
+  }
+
+  /* Eyebrow tag (small caps style for section labels). */
+  .eyebrow {
+    @apply text-xs font-medium uppercase tracking-[0.18em] text-aria-slate;
   }
 }
