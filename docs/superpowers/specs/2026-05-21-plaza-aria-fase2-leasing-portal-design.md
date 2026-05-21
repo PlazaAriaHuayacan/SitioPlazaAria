@@ -15,15 +15,71 @@ Fase 2 construye el **leasing portal** — el corazón comercial del sitio. Es d
 
 Convertir visitas a `/renta` en **leads calificados de leasing**. Métrica norte: % de visitantes únicos de `/renta` que envían el formulario.
 
-## Conocimiento del edificio (de las fotos aéreas)
+## Conocimiento del edificio (de fotos aéreas + plano arquitectónico)
 
 - **Forma:** barra rectangular alargada, una sola crujía.
 - **Pisos:** 2, ambos al aire libre, conectados por escalera + elevador centrales.
-- **Locales:** ~8 por piso, 16 total. Distribución lineal a ambos lados del núcleo central.
+- **Locales:** 31 números de lote (L1–L31), agrupados en **24 unidades efectivas** (12 por piso) — algunos lotes se rentan combinados.
 - **Estacionamiento:** ~15-16 cajones diagonales al frente, contra Av. Huayacán.
 - **Techo:** teja terracota (combina con paleta `aria-terracotta`).
 - **Lenguaje arquitectónico:** moderno, fachadas en vidrio oscuro, marquesinas blancas, zócalo azul marino, palmeras frente a cada bloque de locales. Sin elementos coloniales ni rústicos.
 - **Identidad visual fuerte:** núcleo central (torre de concreto gris) — landmark del plano.
+
+### Catálogo real de locales (del plano arquitectónico)
+
+**Piso 1 — 12 unidades, izquierda → derecha:**
+
+| # Local | m² | Notas |
+|---|---|---|
+| L1 | 126.36 + 31.85 | Esquina izquierda (con anexo) |
+| L2 | 60.35 + 31.85 | Con anexo |
+| L3 | 60.35 + 16.70 | Con anexo |
+| L4 | 60.35 | Estándar |
+| L5 | 60.35 | Estándar |
+| L6-7 | 120.70 | Combinable (2 lotes) |
+| 🔧 | — | NÚCLEO: escalera + elevador |
+| L8-9 | 120.70 | Combinable (2 lotes) |
+| L10 | 60.35 | Estándar |
+| L11 | 60.35 | Estándar |
+| L12 | 60.35 + 19 | Con anexo |
+| L13 | 60.35 + 30.54 | Con anexo |
+| L14-15 | 229.58 | Esquina derecha (combinable, el más grande) |
+
+**Piso 2 — 12 unidades, izquierda → derecha:**
+
+| # Local | m² | Notas |
+|---|---|---|
+| L16-17-18 | 182.76 | Esquina izquierda (combinable de 3 lotes) |
+| L19 | 60.35 | Estándar |
+| L20 | 60.35 | Estándar |
+| L21 | 60.35 | Estándar |
+| L22 | 60.35 | Estándar |
+| L23 | 60.35 | Estándar |
+| 🔧 | — | NÚCLEO: escalera + elevador |
+| L24 | 60.35 | Estándar |
+| L25 | 60.35 | Estándar |
+| L26 | 60.35 | Estándar |
+| L27 | 60.35 | Estándar |
+| L28-29 | 120.70 | Combinable (2 lotes) |
+| L30-31 | 122.28 | Esquina derecha (combinable) |
+
+**Lotes catastrales (información de propiedad, NO se muestra al público):**
+- Lote 22 (mitad izquierda del edificio, locales 1-7 + 16-23)
+- Lote 23 (mitad derecha, locales 8-15 + 24-31)
+- Esta división catastral es solo dato administrativo; el sitio trata la plaza como una unidad.
+
+### Concepto de "Unidad Comercial"
+
+Como los lotes se pueden separar o combinar según el inquilino, agregamos un campo `UnidadComercial` en Airtable:
+
+- Cada lote individual (L1–L31) tiene su registro.
+- El campo `UnidadComercial` agrupa lotes que se rentan juntos:
+  - L1 → `UnidadComercial = "L1"`
+  - L6 → `UnidadComercial = "L6-7"`
+  - L7 → `UnidadComercial = "L6-7"`
+  - L16, L17, L18 → `UnidadComercial = "L16-17-18"`
+- El sitio agrupa por `UnidadComercial` al renderizar (un solo bloque en el plano por unidad).
+- Si el cliente decide separar un combo (ej. rentar L6 y L7 a inquilinos distintos), edita los campos en Airtable y el plano se actualiza sin tocar código.
 
 ## Las 4 piezas de Fase 2
 
@@ -37,7 +93,7 @@ Para entregarlas con checkpoints intermedios demostrables, se dividen en 4 sub-f
 - SVG isométrico estilizado, hecho a mano (no 3D real). Estética: SimCity moderno + sobrio.
 - Ángulo: 30° (no 45°) para que la fachada se vea claramente.
 - Edificio dibujado fielmente: barra rectangular, 2 pisos visibles con balcón corrido en piso 2, núcleo central destacado, techo terracota.
-- 16 bloques de locales (8 + 8) — cada uno es un `<g>` clickable.
+- 24 bloques de unidades comerciales (12 + 12) — cada uno es un `<g>` clickable. Los anchos varían según m² reales del plano (las esquinas L1 y L14-15 son más anchas; los estándar todos iguales; el núcleo central destacado).
 - Decoración fija: palmeras estilizadas frente a cada bloque, estacionamiento con cajones diagonales en planta baja, camellón con palmas al frente (Av. Huayacán).
 - Paleta consistente con el sitio (terracotta, olive, sand, ink).
 
@@ -72,6 +128,8 @@ Usamos `framer-motion` para la coreografía. Performance objetivo: 60fps en MacB
 - Cada local en la tabla `Locales` ya tiene `CoordX, CoordY, Ancho, Alto` (definidos en Fase 1 schema).
 - Estos campos definen la posición del bloque del local dentro del SVG isométrico.
 - El cliente puede mover un bloque ajustando coordenadas si la realidad cambia — sin tocar código.
+- **Nuevo campo `UnidadComercial`** (single text): agrupa lotes combinables. Múltiples registros de `Locales` con el mismo valor de `UnidadComercial` se renderizan como un solo bloque en el plano. Default = `NumeroLocal`.
+- **Nuevo campo `OrdenPlano`** (number): controla el orden izquierda-derecha en cada piso. Permite reorganizar visualmente sin tocar código.
 
 ### Sub-fase 2B — Dashboard "¿Por qué Aria?"
 
