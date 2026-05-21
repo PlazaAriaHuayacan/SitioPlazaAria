@@ -11,8 +11,8 @@ export const metadata: Metadata = {
     'Renta un local en Plaza Aria, sobre Av. Huayacán. Plaza vecinal en dos pisos con estacionamiento techado y comunidad activa. Consulta disponibilidad ahora.',
 };
 
-// TODO: Replace with the actual comercialización WhatsApp number before launch.
-const WA_NUMBER = '5299800000000';
+// WhatsApp del comercializador de Plaza Aria.
+const WA_NUMBER = '5299983214614';
 const WA_TEXT = encodeURIComponent('Hola, me interesa rentar un local en Plaza Aria.');
 const WA_LINK = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
 
