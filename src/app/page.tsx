@@ -1,101 +1,80 @@
-import Image from "next/image";
+import { listLocales, listEventos, getConfig } from '@/lib/airtable/client';
+import { estadoAhora } from '@/lib/horarios';
+import { Hero } from '@/components/home/Hero';
+import { LatidoStrip } from '@/components/home/LatidoStrip';
+import { DosPuertas } from '@/components/home/DosPuertas';
+import { SemanaTeaser } from '@/components/home/SemanaTeaser';
+import { GapsTags } from '@/components/home/GapsTags';
+import type { Local, Evento, Config } from '@/types/domain';
 
-export default function Home() {
+export const revalidate = 300;
+
+export default async function HomePage() {
+  // Fetch all data concurrently; silence errors so the page never crashes.
+  let locales: Local[] = [];
+  let eventos: Evento[] = [];
+  let config: Config | null = null;
+
+  try {
+    [locales, eventos, config] = await Promise.all([
+      listLocales(),
+      listEventos(),
+      getConfig(),
+    ]);
+  } catch (err) {
+    console.error('[HomePage] Airtable fetch failed:', err);
+  }
+
+  // ── Derived counts ──────────────────────────────────────────────────────────
+  const now = new Date();
+
+  const abiertosCnt = locales.filter((l) => {
+    const est = estadoAhora(l.horarios, now);
+    return est.estado === 'abierto' || est.estado === 'cierra-pronto';
+  }).length;
+
+  const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const eventosEstaSemana = eventos.filter((e) => {
+    try {
+      const fecha = new Date(e.fecha + 'T00:00:00');
+      return fecha >= now && fecha <= sevenDaysLater;
+    } catch {
+      return false;
+    }
+  });
+  const clasesCnt = eventosEstaSemana.length;
+
+  const disponibles = locales.filter((l) => l.estado === 'Disponible');
+  const disponiblesCnt = disponibles.length;
+
+  const minRenta =
+    disponibles.length > 0
+      ? Math.min(...disponibles.map((l) => l.leasing?.renta ?? Infinity).filter(isFinite))
+      : undefined;
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  const heroFoto = config?.fotosGenerales?.[0];
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <>
+      <Hero heroFoto={heroFoto} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      <LatidoStrip
+        abiertosCnt={abiertosCnt}
+        clasesCnt={clasesCnt}
+        disponiblesCnt={disponiblesCnt}
+      />
+
+      <DosPuertas
+        totalLocales={locales.length}
+        disponiblesCnt={disponiblesCnt}
+        minRenta={minRenta !== Infinity ? minRenta : undefined}
+        clasesCnt={clasesCnt}
+      />
+
+      <SemanaTeaser eventos={eventosEstaSemana} />
+
+      <GapsTags gaps={config?.gapsGiros ?? []} />
+    </>
   );
 }
