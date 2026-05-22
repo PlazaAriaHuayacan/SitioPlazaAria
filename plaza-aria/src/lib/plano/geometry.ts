@@ -1,9 +1,22 @@
 import type { UnidadComercialAgrupada } from './agrupar';
 import type { Piso } from '@/types/domain';
 
+// ─── Horizontal constants ─────────────────────────────────────────────────────
+/** Usable pixel width that the layout fills (x: 0 → PLANO_WIDTH, relative). */
 export const PLANO_WIDTH = 1200;
-export const BLOQUE_HEIGHT = 140;
 export const CORE_WIDTH = 70;
+
+// ─── Vertical constants ───────────────────────────────────────────────────────
+/** Height of each interactive unit block. */
+export const BLOQUE_HEIGHT = 155;
+
+// SVG absolute Y for each unit zone (the `g translate(100,0)` wrapper is still used
+// for horizontal positioning, so y values are absolute SVG coordinates).
+/** Y-top of the Piso 2 interactive unit strip. */
+export const PISO2_UNITS_Y = 52;
+/** Y-top of the Piso 1 interactive unit strip. */
+export const PISO1_UNITS_Y = 253;
+
 const LOCAL_GAP = 4;
 const BASE_BLOCK_WIDTH = 70;
 const MIN_BLOCK_WIDTH = 40;
@@ -20,7 +33,9 @@ function naturalWidth(m2: number): number {
 
 /**
  * Lay out the bloques + central core for ONE piso along the x-axis.
- * The caller positions y vertically based on which piso this is.
+ * Returns relative x coordinates (0 → PLANO_WIDTH). The caller applies a
+ * `translate(BUILDING_X_OFFSET, 0)` to convert to absolute SVG space.
+ * The core is inserted at the structural mid-index (Math.floor(n/2)).
  */
 export function computeLayout(unidades: UnidadComercialAgrupada[], _piso: Piso): BloqueLayout[] {
   if (unidades.length === 0) return [];

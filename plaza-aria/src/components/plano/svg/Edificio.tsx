@@ -1,87 +1,189 @@
-export function Edificio() {
+/**
+ * Edificio — clean 2D floor-plan building shell.
+ *
+ * Draws the Plaza Aria building as a flat, architectural top-down view:
+ *   • Dark header band with wordmark
+ *   • "PISO 2" zone strip  (y=36–207)
+ *   • Corridor / escaleras strip (y=207–237)
+ *   • "PISO 1" zone strip  (y=237–408)
+ *   • Core column running through both unit zones
+ *
+ * All x coordinates are in absolute SVG space (building occupies x=100–1300).
+ * The interactive Bloque components are rendered on top by PlanoInteractivo.
+ *
+ * @param coreSvgX – absolute SVG x of the left edge of the core column,
+ *   derived from computeLayout so the visual core matches the interactive one.
+ */
+
+// ── Layout constants (must match PlanoInteractivo + geometry) ─────────────────
+const BX = 100;          // building left edge (SVG absolute)
+const BW = 1200;         // building width
+const BR = BX + BW;      // building right edge = 1300
+
+const HEADER_Y = 0;
+const HEADER_H = 36;
+
+const P2_LABEL_Y = HEADER_Y + HEADER_H;   // 36
+const P2_LABEL_H = 16;
+
+const P2_UNITS_Y = P2_LABEL_Y + P2_LABEL_H;   // 52  ← must match PISO2_UNITS_Y in geometry
+const P2_UNITS_H = 155;                          // must match BLOQUE_HEIGHT
+
+const CORRIDOR_Y = P2_UNITS_Y + P2_UNITS_H;    // 207
+const CORRIDOR_H = 30;
+
+const P1_LABEL_Y = CORRIDOR_Y + CORRIDOR_H;     // 237
+const P1_LABEL_H = 16;
+
+const P1_UNITS_Y = P1_LABEL_Y + P1_LABEL_H;    // 253  ← must match PISO1_UNITS_Y in geometry
+const P1_UNITS_H = 155;                          // must match BLOQUE_HEIGHT
+
+const BUILDING_BOTTOM = P1_UNITS_Y + P1_UNITS_H; // 408
+const BUILDING_H = BUILDING_BOTTOM - HEADER_Y;    // 408
+
+const CORE_W = 70;
+
+// ── Color palette (Aria design tokens) ───────────────────────────────────────
+const INK   = '#1F1A14';
+const BONE  = '#FAF6F0';
+const SAND  = '#F1E9DC';
+const SLATE = '#5A544A';
+const LINE  = '#E7DFD1';
+
+export function Edificio({ coreSvgX = 665 }: { coreSvgX?: number }) {
+  const coreH = BUILDING_BOTTOM - P2_UNITS_Y;   // 356
+  const coreTextX = coreSvgX + CORE_W / 2;
+  const coreTextY = P2_UNITS_Y + coreH / 2;
+
   return (
     <>
       <defs>
-        {/* Terracotta tile texture pattern */}
-        <pattern id="roofTiles" x="0" y="0" width="20" height="8" patternUnits="userSpaceOnUse">
-          <rect width="20" height="8" fill="#B85A3C" />
-          <line x1="0" y1="4" x2="20" y2="4" stroke="#8E3F26" strokeWidth="0.5" opacity="0.6" />
-          <line x1="10" y1="0" x2="10" y2="4" stroke="#8E3F26" strokeWidth="0.3" opacity="0.4" />
-          <line x1="0" y1="0" x2="0" y2="4" stroke="#8E3F26" strokeWidth="0.3" opacity="0.4" />
+        {/* Diagonal hatch for corridor */}
+        <pattern id="corridorHatch" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+          <rect width="14" height="14" fill="#E9E2D8" />
+          <line x1="0" y1="7" x2="7" y2="0" stroke={LINE} strokeWidth="1" opacity="0.8" />
+          <line x1="7" y1="14" x2="14" y2="7" stroke={LINE} strokeWidth="1" opacity="0.8" />
         </pattern>
 
-        {/* Concrete formwork texture for tower */}
-        <pattern id="concreteFormwork" x="0" y="0" width="70" height="40" patternUnits="userSpaceOnUse">
-          <rect width="70" height="40" fill="#5A544A" />
-          <line x1="20" y1="0" x2="20" y2="40" stroke="#4A443C" strokeWidth="0.8" opacity="0.5" />
-          <line x1="50" y1="0" x2="50" y2="40" stroke="#4A443C" strokeWidth="0.8" opacity="0.5" />
+        {/* Fine grid for core column */}
+        <pattern id="coreGrid" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+          <rect width="10" height="10" fill="#35302A" />
+          <line x1="5" y1="0" x2="5" y2="10" stroke="#4A443C" strokeWidth="0.6" opacity="0.6" />
+          <line x1="0" y1="5" x2="10" y2="5" stroke="#4A443C" strokeWidth="0.6" opacity="0.6" />
         </pattern>
       </defs>
 
-      {/* 1. Base concrete platform */}
-      <rect x="100" y="120" width="1200" height="420" fill="#EDE7DD" />
-
-      {/* 2. Side walls – left and right depth cues */}
-      <rect x="86" y="120" width="14" height="420" fill="#2E2820" opacity="0.7" />
-      <rect x="1300" y="120" width="14" height="420" fill="#2E2820" opacity="0.7" />
-
-      {/* 3. Piso 2 floor slab */}
-      <rect x="100" y="120" width="1200" height="10" fill="#1F1A14" />
-
-      {/* White balcony railing hint (horizontal lines near bottom of piso 2) */}
-      <line x1="100" y1="293" x2="1300" y2="293" stroke="#FAF6F0" strokeWidth="2" opacity="0.8" />
-      <line x1="100" y1="298" x2="1300" y2="298" stroke="#FAF6F0" strokeWidth="1" opacity="0.5" />
-
-      {/* 4. Piso 1 floor slab */}
-      <rect x="100" y="300" width="1200" height="10" fill="#1F1A14" />
-
-      {/* 5. Roof – terracotta tile */}
-      <polygon
-        points="100,120 1300,120 1280,90 120,90"
-        fill="url(#roofTiles)"
+      {/* ── Drop shadow ──────────────────────────────────────────────────── */}
+      <rect
+        x={BX + 5} y={6}
+        width={BW} height={BUILDING_H}
+        rx={5} fill={INK} opacity={0.08}
       />
-      {/* Roof front lip / fascia */}
-      <line x1="100" y1="120" x2="1300" y2="120" stroke="#8E3F26" strokeWidth="2" />
-      <line x1="120" y1="90" x2="1280" y2="90" stroke="#8E3F26" strokeWidth="1.5" />
 
-      {/* 6. White facade band with wordmark */}
-      <rect x="100" y="72" width="1200" height="18" fill="#FAF6F0" />
+      {/* ── Building base fill ───────────────────────────────────────────── */}
+      <rect
+        x={BX} y={HEADER_Y}
+        width={BW} height={BUILDING_H}
+        rx={4} fill={BONE}
+      />
+
+      {/* ── Header / fascia bar ──────────────────────────────────────────── */}
+      {/* Dark band */}
+      <rect x={BX} y={HEADER_Y} width={BW} height={HEADER_H} rx={4} fill={INK} />
+      {/* Square-off the bottom corners */}
+      <rect x={BX} y={HEADER_Y + HEADER_H - 4} width={BW} height={4} fill={INK} />
+
+      {/* Location sub-label (left) */}
       <text
-        x="145"
-        y="84"
+        x={BX + 14} y={HEADER_Y + 21}
+        fontFamily="var(--font-body), sans-serif"
+        fontSize="8" fill={BONE} opacity={0.5} letterSpacing="0.12em"
+      >
+        AV. HUAYACÁN · CANCÚN · PLANTA BAJA / PISO 2
+      </text>
+
+      {/* Wordmark (center) */}
+      <text
+        x={BX + BW / 2} y={HEADER_Y + 22}
+        textAnchor="middle"
         fontFamily="var(--font-display), serif"
-        fontSize="11"
-        fill="#1F1A14"
-        letterSpacing="0.3em"
-        fontWeight="600"
+        fontSize="12" fontWeight="600" fill={BONE} letterSpacing="0.28em"
       >
         PLAZA ARIA
       </text>
 
-      {/* 7. Central core tower – stairs + elevator */}
-      {/* Tower body */}
-      <rect x="665" y="66" width="70" height="454" fill="url(#concreteFormwork)" />
-      {/* Top cap (slightly lighter) */}
-      <rect x="665" y="66" width="70" height="12" fill="#7A746A" />
-      {/* Bottom base */}
-      <rect x="665" y="506" width="70" height="14" fill="#4A443C" />
+      {/* ── Piso 2 label strip ───────────────────────────────────────────── */}
+      <rect x={BX} y={P2_LABEL_Y} width={BW} height={P2_LABEL_H} fill={SAND} />
+      <line x1={BX} y1={P2_LABEL_Y + P2_LABEL_H} x2={BR} y2={P2_LABEL_Y + P2_LABEL_H}
+        stroke={LINE} strokeWidth="1" />
+      <text
+        x={BX + 14} y={P2_LABEL_Y + 11}
+        fontFamily="var(--font-body), sans-serif"
+        fontSize="8.5" fontWeight="700" fill={SLATE} letterSpacing="0.18em"
+      >
+        PISO 2
+      </text>
 
-      {/* Stairs pictogram in lower half of tower */}
-      <line x1="678" y1="400" x2="722" y2="400" stroke="#FAF6F0" strokeWidth="1.5" opacity="0.4" />
-      <line x1="678" y1="412" x2="722" y2="412" stroke="#FAF6F0" strokeWidth="1.5" opacity="0.4" />
-      <line x1="678" y1="424" x2="722" y2="424" stroke="#FAF6F0" strokeWidth="1.5" opacity="0.4" />
-      <line x1="678" y1="436" x2="722" y2="436" stroke="#FAF6F0" strokeWidth="1.5" opacity="0.4" />
-      <line x1="678" y1="448" x2="722" y2="448" stroke="#FAF6F0" strokeWidth="1.5" opacity="0.4" />
-      {/* Stair vertical divider */}
-      <line x1="700" y1="396" x2="700" y2="456" stroke="#FAF6F0" strokeWidth="1" opacity="0.3" />
+      {/* ── Piso 2 unit zone background ──────────────────────────────────── */}
+      <rect x={BX} y={P2_UNITS_Y} width={BW} height={P2_UNITS_H} fill="#F5EFE6" />
 
-      {/* Elevator door outline */}
-      <rect x="674" y="170" width="22" height="30" fill="none" stroke="#FAF6F0" strokeWidth="1" opacity="0.35" />
-      <line x1="685" y1="170" x2="685" y2="200" stroke="#FAF6F0" strokeWidth="0.8" opacity="0.3" />
+      {/* ── Corridor ─────────────────────────────────────────────────────── */}
+      <rect x={BX} y={CORRIDOR_Y} width={BW} height={CORRIDOR_H} fill="url(#corridorHatch)" />
+      <line x1={BX} y1={CORRIDOR_Y} x2={BR} y2={CORRIDOR_Y} stroke="#C8BFB3" strokeWidth="1" />
+      <line x1={BX} y1={CORRIDOR_Y + CORRIDOR_H} x2={BR} y2={CORRIDOR_Y + CORRIDOR_H}
+        stroke="#C8BFB3" strokeWidth="1" />
+      <text
+        x={BX + BW / 2} y={CORRIDOR_Y + 19}
+        textAnchor="middle"
+        fontFamily="var(--font-body), sans-serif"
+        fontSize="7.5" fill={SLATE} opacity="0.6" letterSpacing="0.22em"
+      >
+        PASILLO · ESCALERAS
+      </text>
 
-      {/* Tower separation lines – where it intersects the floor slabs */}
-      <line x1="665" y1="130" x2="735" y2="130" stroke="#1F1A14" strokeWidth="2" />
-      <line x1="665" y1="300" x2="735" y2="300" stroke="#1F1A14" strokeWidth="2" />
+      {/* ── Piso 1 label strip ───────────────────────────────────────────── */}
+      <rect x={BX} y={P1_LABEL_Y} width={BW} height={P1_LABEL_H} fill={SAND} />
+      <line x1={BX} y1={P1_LABEL_Y + P1_LABEL_H} x2={BR} y2={P1_LABEL_Y + P1_LABEL_H}
+        stroke={LINE} strokeWidth="1" />
+      <text
+        x={BX + 14} y={P1_LABEL_Y + 11}
+        fontFamily="var(--font-body), sans-serif"
+        fontSize="8.5" fontWeight="700" fill={SLATE} letterSpacing="0.18em"
+      >
+        PISO 1
+      </text>
+
+      {/* ── Piso 1 unit zone background ──────────────────────────────────── */}
+      <rect x={BX} y={P1_UNITS_Y} width={BW} height={P1_UNITS_H} fill="#F5EFE6" />
+
+      {/* ── Core column (spans both unit zones) ──────────────────────────── */}
+      <rect x={coreSvgX} y={P2_UNITS_Y} width={CORE_W} height={coreH} fill="url(#coreGrid)" />
+
+      {/* Core label rotated */}
+      <text
+        x={coreTextX} y={coreTextY}
+        textAnchor="middle" dominantBaseline="middle"
+        fontFamily="var(--font-body), sans-serif"
+        fontSize="7" fill={BONE} opacity="0.6" letterSpacing="0.12em"
+        transform={`rotate(-90 ${coreTextX} ${coreTextY})`}
+      >
+        NÚCLEO · ESCALERAS
+      </text>
+
+      {/* Core border */}
+      <rect x={coreSvgX} y={P2_UNITS_Y} width={CORE_W} height={coreH}
+        fill="none" stroke={INK} strokeWidth="1" opacity="0.25" />
+
+      {/* Core crossing the corridor — cover hatch with solid */}
+      <rect x={coreSvgX} y={CORRIDOR_Y} width={CORE_W} height={CORRIDOR_H}
+        fill="#35302A" opacity="0.85" />
+
+      {/* ── Bottom sill ──────────────────────────────────────────────────── */}
+      <rect x={BX} y={BUILDING_BOTTOM} width={BW} height={6} fill={INK} opacity="0.12" />
+
+      {/* ── Building outer border ────────────────────────────────────────── */}
+      <rect x={BX} y={HEADER_Y} width={BW} height={BUILDING_H}
+        rx={4} fill="none" stroke={INK} strokeWidth="1.5" />
     </>
   );
 }
