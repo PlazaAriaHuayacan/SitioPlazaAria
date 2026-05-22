@@ -1,189 +1,304 @@
 /**
- * Edificio — clean 2D floor-plan building shell.
+ * Edificio — Building elevation with cabinet-projection depth.
  *
- * Draws the Plaza Aria building as a flat, architectural top-down view:
- *   • Dark header band with wordmark
- *   • "PISO 2" zone strip  (y=36–207)
- *   • Corridor / escaleras strip (y=207–237)
- *   • "PISO 1" zone strip  (y=237–408)
- *   • Core column running through both unit zones
+ * The building is shown as a front elevation.  Select horizontal surfaces
+ * (roof fascia, floor slab, foundation plinth) receive a thin parallelogram
+ * "top face" to suggest depth without breaking the SVG coordinate system.
  *
- * All x coordinates are in absolute SVG space (building occupies x=100–1300).
- * The interactive Bloque components are rendered on top by PlanoInteractivo.
- *
- * @param coreSvgX – absolute SVG x of the left edge of the core column,
- *   derived from computeLayout so the visual core matches the interactive one.
+ * Y zones (must match geometry.ts constants):
+ *   PISO1_UNITS_Y  =  52   → top of Piso 1 interactive band
+ *   PISO2_UNITS_Y  = 253   → top of Piso 2 interactive band
+ *   BLOQUE_HEIGHT  = 155
  */
 
-// ── Layout constants (must match PlanoInteractivo + geometry) ─────────────────
-const BX = 100;          // building left edge (SVG absolute)
-const BW = 1200;         // building width
-const BR = BX + BW;      // building right edge = 1300
+// ── Depth parameters (cabinet projection, very subtle) ───────────────────────
+const DX = 7;   // horizontal offset of depth faces (px, rightward)
+const DY = 4;   // vertical   offset of depth faces (px, upward)
 
-const HEADER_Y = 0;
-const HEADER_H = 36;
+/** Points string for a thin top-face parallelogram above a horizontal line. */
+function topFace(x1: number, y: number, x2: number): string {
+  return `${x1},${y} ${x2},${y} ${x2 + DX},${y - DY} ${x1 + DX},${y - DY}`;
+}
+/** Points string for a right-face parallelogram on the right edge of a rect. */
+function rightFace(x: number, y1: number, y2: number): string {
+  return `${x},${y1} ${x},${y2} ${x + DX},${y2 - DY} ${x + DX},${y1 - DY}`;
+}
 
-const P2_LABEL_Y = HEADER_Y + HEADER_H;   // 36
-const P2_LABEL_H = 16;
+// ── Layout constants ──────────────────────────────────────────────────────────
+// Interior (where interactive Bloques live)
+const BX = 100;
+const BW = 1200;
+const BR = BX + BW;   // 1300
 
-const P2_UNITS_Y = P2_LABEL_Y + P2_LABEL_H;   // 52  ← must match PISO2_UNITS_Y in geometry
-const P2_UNITS_H = 155;                          // must match BLOQUE_HEIGHT
+// Exterior (columns + fascia, slightly wider than interior)
+const EX  = 74;
+const EW  = 1252;
+const ER  = EX + EW;  // 1326
 
-const CORRIDOR_Y = P2_UNITS_Y + P2_UNITS_H;    // 207
-const CORRIDOR_H = 30;
+// Column width on each side (exterior minus interior)
+const COL = BX - EX;  // 26 px
 
-const P1_LABEL_Y = CORRIDOR_Y + CORRIDOR_H;     // 237
-const P1_LABEL_H = 16;
+// Vertical (all SVG absolute coordinates)
+const ROOF_TOP      =  18;   // top of visible building
+const HEADER_BOT    =  52;   // = PISO1_UNITS_Y — where header ends / p1 zone starts
+const P1_BOT        = 207;   // piso 1 zone bottom   (= PISO1_UNITS_Y + BLOQUE_HEIGHT)
+const SLAB_TOP      = P1_BOT;
+const SLAB_BOT      = 253;   // = PISO2_UNITS_Y — slab ends / p2 zone starts
+const P2_BOT        = 408;   // piso 2 zone bottom
+const PLINTH_TOP    = P2_BOT;
+const PLINTH_BOT    = 432;
+const BLDG_H        = PLINTH_BOT - ROOF_TOP;  // total visual height
 
-const P1_UNITS_Y = P1_LABEL_Y + P1_LABEL_H;    // 253  ← must match PISO1_UNITS_Y in geometry
-const P1_UNITS_H = 155;                          // must match BLOQUE_HEIGHT
+// Accent stripe on header
+const STRIPE_H = 5;
 
-const BUILDING_BOTTOM = P1_UNITS_Y + P1_UNITS_H; // 408
-const BUILDING_H = BUILDING_BOTTOM - HEADER_Y;    // 408
-
-const CORE_W = 70;
-
-// ── Color palette (Aria design tokens) ───────────────────────────────────────
-const INK   = '#1F1A14';
-const BONE  = '#FAF6F0';
-const SAND  = '#F1E9DC';
-const SLATE = '#5A544A';
-const LINE  = '#E7DFD1';
+// Colors
+const FACADE      = '#F0E9DF';  // warm stucco / plaster
+const FACADE_DARK = '#DDD4C8';  // column shadow face
+const HEADER_BG   = '#1F1A14';  // ink
+const SLAB_FRONT  = '#7E7870';  // concrete grey
+const SLAB_TOP_C  = '#5A5450';  // slab top-face (darker)
+const PLINTH_C    = '#6A6460';
+const PLINTH_TOP_C= '#504C48';
+const UNIT_BG     = '#F5F0E8';  // slightly warm white for unit zones
+const TERRACOTTA  = '#B85A3C';
+const BONE        = '#FAF6F0';
+const SLATE       = '#5A544A';
+const LINE        = '#E7DFD1';
+const CORE_C      = '#2E2A26';
+const CORE_TOP_C  = '#201E1A';
 
 export function Edificio({ coreSvgX = 665 }: { coreSvgX?: number }) {
-  const coreH = BUILDING_BOTTOM - P2_UNITS_Y;   // 356
+  const CORE_W = 70;
+  const coreH = PLINTH_BOT - HEADER_BOT;
   const coreTextX = coreSvgX + CORE_W / 2;
-  const coreTextY = P2_UNITS_Y + coreH / 2;
+  const coreTextY = HEADER_BOT + coreH / 2;
 
   return (
     <>
       <defs>
-        {/* Diagonal hatch for corridor */}
-        <pattern id="corridorHatch" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
-          <rect width="14" height="14" fill="#E9E2D8" />
-          <line x1="0" y1="7" x2="7" y2="0" stroke={LINE} strokeWidth="1" opacity="0.8" />
-          <line x1="7" y1="14" x2="14" y2="7" stroke={LINE} strokeWidth="1" opacity="0.8" />
+        {/* Stucco facade texture (fine diagonal) */}
+        <pattern id="stucco" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+          <rect width="24" height="24" fill={FACADE} />
+          <line x1="0" y1="12" x2="12" y2="0" stroke={FACADE_DARK} strokeWidth="0.4" opacity="0.25" />
+          <line x1="12" y1="24" x2="24" y2="12" stroke={FACADE_DARK} strokeWidth="0.4" opacity="0.25" />
         </pattern>
 
-        {/* Fine grid for core column */}
+        {/* Core concrete grid */}
         <pattern id="coreGrid" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-          <rect width="10" height="10" fill="#35302A" />
-          <line x1="5" y1="0" x2="5" y2="10" stroke="#4A443C" strokeWidth="0.6" opacity="0.6" />
-          <line x1="0" y1="5" x2="10" y2="5" stroke="#4A443C" strokeWidth="0.6" opacity="0.6" />
+          <rect width="10" height="10" fill={CORE_C} />
+          <line x1="5"  y1="0"  x2="5"  y2="10" stroke="#4A443C" strokeWidth="0.6" opacity="0.5" />
+          <line x1="0"  y1="5"  x2="10" y2="5"  stroke="#4A443C" strokeWidth="0.6" opacity="0.5" />
         </pattern>
+
+        {/* Corridor diagonal hatch */}
+        <pattern id="slabHatch" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+          <rect width="12" height="12" fill="#E2DAD2" />
+          <line x1="0" y1="6" x2="6" y2="0" stroke="#CAC2BA" strokeWidth="0.8" opacity="0.6" />
+          <line x1="6" y1="12" x2="12" y2="6" stroke="#CAC2BA" strokeWidth="0.8" opacity="0.6" />
+        </pattern>
+
+        {/* Drop shadow for whole building */}
+        <filter id="bldgShadow" x="-4%" y="-4%" width="112%" height="120%">
+          <feDropShadow dx="4" dy="8" stdDeviation="8" floodColor="#1F1A14" floodOpacity="0.14" />
+        </filter>
       </defs>
 
-      {/* ── Drop shadow ──────────────────────────────────────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          0.  Shadow layer
+      ═══════════════════════════════════════════════════════════════════ */}
       <rect
-        x={BX + 5} y={6}
-        width={BW} height={BUILDING_H}
-        rx={5} fill={INK} opacity={0.08}
+        x={EX} y={ROOF_TOP}
+        width={EW} height={BLDG_H}
+        rx={3} fill="#1F1A14" opacity={0.1}
+        transform="translate(5,8)"
       />
 
-      {/* ── Building base fill ───────────────────────────────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          1.  Building main face (stucco exterior fill)
+      ═══════════════════════════════════════════════════════════════════ */}
       <rect
-        x={BX} y={HEADER_Y}
-        width={BW} height={BUILDING_H}
-        rx={4} fill={BONE}
+        x={EX} y={ROOF_TOP}
+        width={EW} height={BLDG_H}
+        rx={3} fill="url(#stucco)"
       />
 
-      {/* ── Header / fascia bar ──────────────────────────────────────────── */}
-      {/* Dark band */}
-      <rect x={BX} y={HEADER_Y} width={BW} height={HEADER_H} rx={4} fill={INK} />
-      {/* Square-off the bottom corners */}
-      <rect x={BX} y={HEADER_Y + HEADER_H - 4} width={BW} height={4} fill={INK} />
+      {/* ═══════════════════════════════════════════════════════════════════
+          2.  Roof fascia — top face + front face
+      ═══════════════════════════════════════════════════════════════════ */}
+      {/* Top-face depth parallelogram */}
+      <polygon
+        points={topFace(EX, ROOF_TOP, ER)}
+        fill={FACADE_DARK}
+        opacity={0.7}
+      />
+      {/* Front face of roof fascia */}
+      <rect x={EX} y={ROOF_TOP} width={EW} height={HEADER_BOT - ROOF_TOP} fill={HEADER_BG} rx={3} />
+      {/* Square off bottom corners of header */}
+      <rect x={EX} y={HEADER_BOT - 4} width={EW} height={4} fill={HEADER_BG} />
 
-      {/* Location sub-label (left) */}
+      {/* Terracotta accent stripe at header bottom */}
+      <rect x={EX} y={HEADER_BOT - STRIPE_H} width={EW} height={STRIPE_H} fill={TERRACOTTA} opacity={0.85} />
+
+      {/* Location micro-label (left) */}
       <text
-        x={BX + 14} y={HEADER_Y + 21}
+        x={BX + 14} y={ROOF_TOP + 19}
         fontFamily="var(--font-body), sans-serif"
-        fontSize="8" fill={BONE} opacity={0.5} letterSpacing="0.12em"
+        fontSize="7.5" fill={BONE} opacity={0.45} letterSpacing="0.12em"
       >
-        AV. HUAYACÁN · CANCÚN · PLANTA BAJA / PISO 2
+        AV. HUAYACÁN · CANCÚN
       </text>
 
       {/* Wordmark (center) */}
       <text
-        x={BX + BW / 2} y={HEADER_Y + 22}
+        x={EX + EW / 2} y={ROOF_TOP + 22}
         textAnchor="middle"
         fontFamily="var(--font-display), serif"
-        fontSize="12" fontWeight="600" fill={BONE} letterSpacing="0.28em"
+        fontSize="13" fontWeight="600" fill={BONE} letterSpacing="0.3em"
       >
         PLAZA ARIA
       </text>
 
-      {/* ── Piso 2 label strip ───────────────────────────────────────────── */}
-      <rect x={BX} y={P2_LABEL_Y} width={BW} height={P2_LABEL_H} fill={SAND} />
-      <line x1={BX} y1={P2_LABEL_Y + P2_LABEL_H} x2={BR} y2={P2_LABEL_Y + P2_LABEL_H}
-        stroke={LINE} strokeWidth="1" />
-      <text
-        x={BX + 14} y={P2_LABEL_Y + 11}
-        fontFamily="var(--font-body), sans-serif"
-        fontSize="8.5" fontWeight="700" fill={SLATE} letterSpacing="0.18em"
-      >
-        PISO 2
-      </text>
+      {/* Right-face of left roof column edge */}
+      <polygon
+        points={rightFace(ER, ROOF_TOP, HEADER_BOT)}
+        fill={FACADE_DARK}
+        opacity={0.5}
+      />
 
-      {/* ── Piso 2 unit zone background ──────────────────────────────────── */}
-      <rect x={BX} y={P2_UNITS_Y} width={BW} height={P2_UNITS_H} fill="#F5EFE6" />
+      {/* ═══════════════════════════════════════════════════════════════════
+          3.  Left exterior column
+      ═══════════════════════════════════════════════════════════════════ */}
+      {/* Column front face */}
+      <rect x={EX} y={HEADER_BOT} width={COL} height={PLINTH_BOT - HEADER_BOT} fill="url(#stucco)" />
+      {/* Column right-face depth */}
+      <polygon
+        points={rightFace(BX, HEADER_BOT, PLINTH_BOT)}
+        fill={FACADE_DARK}
+        opacity={0.45}
+      />
+      {/* Thin vertical grooves on column */}
+      <line x1={EX + 8}  y1={HEADER_BOT + 6} x2={EX + 8}  y2={PLINTH_BOT - 6} stroke={FACADE_DARK} strokeWidth="1" opacity={0.4} />
+      <line x1={EX + 17} y1={HEADER_BOT + 6} x2={EX + 17} y2={PLINTH_BOT - 6} stroke={FACADE_DARK} strokeWidth="1" opacity={0.4} />
 
-      {/* ── Corridor ─────────────────────────────────────────────────────── */}
-      <rect x={BX} y={CORRIDOR_Y} width={BW} height={CORRIDOR_H} fill="url(#corridorHatch)" />
-      <line x1={BX} y1={CORRIDOR_Y} x2={BR} y2={CORRIDOR_Y} stroke="#C8BFB3" strokeWidth="1" />
-      <line x1={BX} y1={CORRIDOR_Y + CORRIDOR_H} x2={BR} y2={CORRIDOR_Y + CORRIDOR_H}
-        stroke="#C8BFB3" strokeWidth="1" />
-      <text
-        x={BX + BW / 2} y={CORRIDOR_Y + 19}
-        textAnchor="middle"
-        fontFamily="var(--font-body), sans-serif"
-        fontSize="7.5" fill={SLATE} opacity="0.6" letterSpacing="0.22em"
-      >
-        PASILLO · ESCALERAS
-      </text>
+      {/* ═══════════════════════════════════════════════════════════════════
+          4.  Right exterior column
+      ═══════════════════════════════════════════════════════════════════ */}
+      <rect x={BR} y={HEADER_BOT} width={COL} height={PLINTH_BOT - HEADER_BOT} fill="url(#stucco)" />
+      <line x1={BR + 8}  y1={HEADER_BOT + 6} x2={BR + 8}  y2={PLINTH_BOT - 6} stroke={FACADE_DARK} strokeWidth="1" opacity={0.4} />
+      <line x1={BR + 17} y1={HEADER_BOT + 6} x2={BR + 17} y2={PLINTH_BOT - 6} stroke={FACADE_DARK} strokeWidth="1" opacity={0.4} />
 
-      {/* ── Piso 1 label strip ───────────────────────────────────────────── */}
-      <rect x={BX} y={P1_LABEL_Y} width={BW} height={P1_LABEL_H} fill={SAND} />
-      <line x1={BX} y1={P1_LABEL_Y + P1_LABEL_H} x2={BR} y2={P1_LABEL_Y + P1_LABEL_H}
-        stroke={LINE} strokeWidth="1" />
+      {/* ═══════════════════════════════════════════════════════════════════
+          5.  Piso 1 unit zone background
+      ═══════════════════════════════════════════════════════════════════ */}
+      <rect x={BX} y={HEADER_BOT} width={BW} height={P1_BOT - HEADER_BOT} fill={UNIT_BG} />
+
+      {/* Piso 1 label (subtle, inside zone) */}
       <text
-        x={BX + 14} y={P1_LABEL_Y + 11}
+        x={BX + 10} y={HEADER_BOT + 13}
         fontFamily="var(--font-body), sans-serif"
-        fontSize="8.5" fontWeight="700" fill={SLATE} letterSpacing="0.18em"
+        fontSize="7.5" fontWeight="700" fill={SLATE} opacity={0.45} letterSpacing="0.18em"
       >
         PISO 1
       </text>
 
-      {/* ── Piso 1 unit zone background ──────────────────────────────────── */}
-      <rect x={BX} y={P1_UNITS_Y} width={BW} height={P1_UNITS_H} fill="#F5EFE6" />
+      {/* ═══════════════════════════════════════════════════════════════════
+          6.  Floor slab (between pisos)
+      ═══════════════════════════════════════════════════════════════════ */}
+      {/* Top-face depth of slab */}
+      <polygon
+        points={topFace(BX, SLAB_TOP, BR)}
+        fill={SLAB_TOP_C}
+        opacity={0.85}
+      />
+      {/* Slab front face */}
+      <rect x={BX} y={SLAB_TOP} width={BW} height={SLAB_BOT - SLAB_TOP} fill="url(#slabHatch)" />
 
-      {/* ── Core column (spans both unit zones) ──────────────────────────── */}
-      <rect x={coreSvgX} y={P2_UNITS_Y} width={CORE_W} height={coreH} fill="url(#coreGrid)" />
+      {/* Slab frame lines */}
+      <line x1={BX} y1={SLAB_TOP}  x2={BR} y2={SLAB_TOP}  stroke={SLAB_FRONT} strokeWidth="1.5" opacity="0.6" />
+      <line x1={BX} y1={SLAB_BOT}  x2={BR} y2={SLAB_BOT}  stroke={SLAB_FRONT} strokeWidth="1.5" opacity="0.6" />
 
-      {/* Core label rotated */}
+      {/* Corridor label on the slab */}
+      <text
+        x={BX + BW / 2} y={SLAB_TOP + (SLAB_BOT - SLAB_TOP) / 2 + 4}
+        textAnchor="middle"
+        fontFamily="var(--font-body), sans-serif"
+        fontSize="7.5" fill={SLATE} opacity={0.55} letterSpacing="0.22em"
+      >
+        PASILLO · ESCALERAS · PISO 2
+      </text>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          7.  Piso 2 unit zone background
+      ═══════════════════════════════════════════════════════════════════ */}
+      <rect x={BX} y={SLAB_BOT} width={BW} height={P2_BOT - SLAB_BOT} fill={UNIT_BG} />
+
+      <text
+        x={BX + 10} y={SLAB_BOT + 13}
+        fontFamily="var(--font-body), sans-serif"
+        fontSize="7.5" fontWeight="700" fill={SLATE} opacity={0.45} letterSpacing="0.18em"
+      >
+        PISO 2
+      </text>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          8.  Foundation plinth
+      ═══════════════════════════════════════════════════════════════════ */}
+      {/* Top-face depth */}
+      <polygon
+        points={topFace(EX, PLINTH_TOP, ER)}
+        fill={PLINTH_TOP_C}
+        opacity={0.75}
+      />
+      {/* Front face */}
+      <rect x={EX} y={PLINTH_TOP} width={EW} height={PLINTH_BOT - PLINTH_TOP} fill={PLINTH_C} />
+      {/* Right-face depth on plinth */}
+      <polygon
+        points={rightFace(ER, PLINTH_TOP, PLINTH_BOT)}
+        fill={PLINTH_TOP_C}
+        opacity={0.6}
+      />
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          9.  Core column (staircase / elevator tower)
+      ═══════════════════════════════════════════════════════════════════ */}
+      {/* Core top-face protrudes above the header (above y=ROOF_TOP) */}
+      <polygon
+        points={topFace(coreSvgX, ROOF_TOP - 8, coreSvgX + CORE_W)}
+        fill={CORE_TOP_C}
+        opacity={0.9}
+      />
+      {/* Core front face — taller than the building (protrudes above roofline) */}
+      <rect x={coreSvgX} y={ROOF_TOP - 8} width={CORE_W} height={coreH + 8} fill="url(#coreGrid)" />
+      {/* Core right-face depth (small strip on right edge) */}
+      <polygon
+        points={rightFace(coreSvgX + CORE_W, ROOF_TOP - 8, PLINTH_BOT)}
+        fill={CORE_TOP_C}
+        opacity={0.6}
+      />
+      {/* Core label (rotated) */}
       <text
         x={coreTextX} y={coreTextY}
         textAnchor="middle" dominantBaseline="middle"
         fontFamily="var(--font-body), sans-serif"
-        fontSize="7" fill={BONE} opacity="0.6" letterSpacing="0.12em"
+        fontSize="6.5" fill={BONE} opacity={0.5} letterSpacing="0.1em"
         transform={`rotate(-90 ${coreTextX} ${coreTextY})`}
       >
         NÚCLEO · ESCALERAS
       </text>
-
       {/* Core border */}
-      <rect x={coreSvgX} y={P2_UNITS_Y} width={CORE_W} height={coreH}
-        fill="none" stroke={INK} strokeWidth="1" opacity="0.25" />
+      <rect
+        x={coreSvgX} y={ROOF_TOP - 8} width={CORE_W} height={coreH + 8}
+        fill="none" stroke={CORE_TOP_C} strokeWidth="1" opacity={0.4}
+      />
 
-      {/* Core crossing the corridor — cover hatch with solid */}
-      <rect x={coreSvgX} y={CORRIDOR_Y} width={CORE_W} height={CORRIDOR_H}
-        fill="#35302A" opacity="0.85" />
-
-      {/* ── Bottom sill ──────────────────────────────────────────────────── */}
-      <rect x={BX} y={BUILDING_BOTTOM} width={BW} height={6} fill={INK} opacity="0.12" />
-
-      {/* ── Building outer border ────────────────────────────────────────── */}
-      <rect x={BX} y={HEADER_Y} width={BW} height={BUILDING_H}
-        rx={4} fill="none" stroke={INK} strokeWidth="1.5" />
+      {/* ═══════════════════════════════════════════════════════════════════
+         10.  Building outer border
+      ═══════════════════════════════════════════════════════════════════ */}
+      <rect
+        x={EX} y={ROOF_TOP} width={EW} height={BLDG_H}
+        rx={3} fill="none" stroke={HEADER_BG} strokeWidth="1.5" opacity={0.6}
+      />
     </>
   );
 }

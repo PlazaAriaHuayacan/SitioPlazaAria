@@ -132,7 +132,7 @@ export function PlanoInteractivo({
       {/* ── SVG canvas ────────────────────────────────────────────────────── */}
       <div className="w-full overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0">
         <svg
-          viewBox="0 0 1400 560"
+          viewBox="0 0 1400 600"
           xmlns="http://www.w3.org/2000/svg"
           className="h-auto max-w-page"
           style={{ width: '100%', minWidth: 680 }}
