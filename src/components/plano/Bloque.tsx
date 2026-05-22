@@ -3,19 +3,21 @@
 import { motion } from 'framer-motion';
 import type { BloqueLayout } from '@/lib/plano/geometry';
 
-const ARIA_COLORS = {
-  bone: '#FAF6F0',
-  sand: '#F1E9DC',
-  ink: '#1F1A14',
-  slate: '#5A544A',
-  terracotta: '#B85A3C',
-  terracottaDark: '#8E3F26',
-  line: '#E7DFD1',
+const C = {
+  bone:            '#FAF6F0',
+  sand:            '#F1E9DC',
+  ink:             '#1F1A14',
+  slate:           '#5A544A',
+  terracotta:      '#B85A3C',
+  terracottaDark:  '#8E3F26',
+  terracottaLight: '#C97458',
+  line:            '#E7DFD1',
+  cream:           '#EDE7DD',
 } as const;
 
 type BloqueProps = {
   layout: Extract<BloqueLayout, { type: 'bloque' }>;
-  /** Vertical offset (the parent decides — piso 1 vs piso 2 positioning). */
+  /** Absolute SVG y of the top of this piso's unit zone. */
   yOffset: number;
   isHighlighted?: boolean;
   onClick?: (unidadId: string) => void;
@@ -30,45 +32,57 @@ export function Bloque({
   onHoverChange,
 }: BloqueProps) {
   const { unidad, x, ancho, alto } = layout;
-  const y = yOffset;
 
-  // Visual variant per estado
   const isDisponible = unidad.estado === 'Disponible';
-  const isProximo = unidad.estado === 'Proximamente';
+  const isProximo    = unidad.estado === 'Proximamente';
 
-  const fill = ARIA_COLORS.bone;
-  const stroke = isDisponible
-    ? ARIA_COLORS.terracotta
+  // ── Visual fills ────────────────────────────────────────────────────────────
+  const bgFill = isDisponible
+    ? C.terracotta
     : isProximo
-    ? ARIA_COLORS.slate
-    : ARIA_COLORS.line;
-  const strokeWidth = isDisponible ? 2.5 : 1.5;
-  const opacity = isProximo ? 0.55 : 1;
+    ? C.sand
+    : C.cream;
 
-  const handleEnter = () => onHoverChange?.(unidad.id);
-  const handleLeave = () => onHoverChange?.(null);
-  const handleClick = () => onClick?.(unidad.id);
+  const borderColor = isHighlighted
+    ? C.ink
+    : isDisponible
+    ? C.terracottaDark
+    : isProximo
+    ? C.slate
+    : C.line;
 
-  // Center for placement of label/logo
+  const borderWidth = isHighlighted ? 2.5 : isDisponible ? 2 : 1;
+  const textColor   = isDisponible ? C.bone : C.ink;
+  const opacity     = isProximo ? 0.6 : 1;
+
+  // ── Label text ──────────────────────────────────────────────────────────────
+  const unitId    = unidad.loteIds.join('-');
+  // Always prefer the nombre; fall back to unit ID (e.g. "L6-7").
+  // For disponibles, nombre is typically the lot ID anyway.
+  const mainLabel = unidad.nombre || unitId;
+  const maxChars  = Math.max(4, Math.floor(ancho / 7));
+  const truncated = mainLabel.length > maxChars
+    ? mainLabel.slice(0, maxChars - 1) + '…'
+    : mainLabel;
+
   const cx = x + ancho / 2;
-  const cy = alto / 2;
+  const midY = alto / 2;
+  const fontSize = Math.min(Math.max(ancho * 0.14, 9), 18);
 
-  // Truncate the label for the visible block
-  const label = unidad.nombre || `Local ${unidad.loteIds.join('-')}`;
-  const labelMaxChars = Math.max(6, Math.floor(ancho / 7));
-  const visibleLabel =
-    label.length > labelMaxChars ? label.slice(0, labelMaxChars - 1) + '…' : label;
+  const handleEnter  = () => onHoverChange?.(unidad.id);
+  const handleLeave  = () => onHoverChange?.(null);
+  const handleClick  = () => onClick?.(unidad.id);
 
   return (
     <motion.g
       data-testid={`bloque-${unidad.id}`}
       role="button"
       tabIndex={0}
-      aria-label={`${unidad.nombre || 'Local ' + unidad.loteIds.join('-')} · ${unidad.estado}`}
+      aria-label={`${unidad.nombre || unitId} · ${unidad.estado}`}
       style={{ cursor: 'pointer', opacity }}
-      whileHover={{ y: y - 2 }}
-      animate={{ y }}
-      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      animate={{ y: yOffset }}
+      whileHover={{ y: yOffset - 3 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 28 }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
@@ -81,109 +95,97 @@ export function Bloque({
         }
       }}
     >
-      {/* Slow pulse glow for Disponibles */}
+      {/* Pulse glow for disponibles */}
       {isDisponible && (
         <motion.rect
-          x={x - 2}
-          y={0}
-          width={ancho + 4}
-          height={alto + 4}
-          fill="none"
-          stroke={ARIA_COLORS.terracotta}
+          x={x - 3} y={-3}
+          width={ancho + 6} height={alto + 6}
+          rx={5} fill="none"
+          stroke={C.terracottaLight}
           strokeWidth={3}
-          rx={4}
-          animate={{ opacity: [0.0, 0.5, 0.0] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ opacity: [0, 0.55, 0] }}
+          transition={{ duration: 2.0, repeat: Infinity, ease: 'easeInOut', repeatDelay: 0.5 }}
         />
       )}
 
       {/* Main block */}
       <rect
-        x={x}
-        y={0}
-        width={ancho}
-        height={alto}
+        x={x} y={0}
+        width={ancho} height={alto}
         rx={3}
-        fill={fill}
-        stroke={isHighlighted ? ARIA_COLORS.ink : stroke}
-        strokeWidth={isHighlighted ? 3 : strokeWidth}
+        fill={bgFill}
+        stroke={borderColor}
+        strokeWidth={borderWidth}
       />
 
-      {/* Logo (if available) or stylized initial */}
+      {/* Logo (if available) */}
       {unidad.logo?.url ? (
         <image
           href={unidad.logo.url}
-          x={cx - Math.min(ancho * 0.7, 40)}
-          y={cy - 24}
-          width={Math.min(ancho * 0.7, 80)}
+          x={cx - Math.min(ancho * 0.35, 28)}
+          y={midY - 18}
+          width={Math.min(ancho * 0.7, 56)}
           height={36}
           preserveAspectRatio="xMidYMid meet"
         />
       ) : (
         <text
-          x={cx}
-          y={cy + 4}
+          x={cx} y={midY + 5}
           textAnchor="middle"
           fontFamily="var(--font-display), serif"
-          fontSize={Math.min(ancho * 0.18, 22)}
-          fill={ARIA_COLORS.ink}
-          fontWeight={500}
+          fontSize={fontSize}
+          fill={textColor}
+          fontWeight={isDisponible ? 600 : 500}
           aria-hidden
         >
-          {visibleLabel}
+          {truncated}
         </text>
       )}
 
-      {/* Badge for Disponible */}
+      {/* Disponible sub-label: "LIBRE" */}
       {isDisponible && (
-        <g>
-          <rect
-            x={x + ancho - 60}
-            y={4}
-            width={56}
-            height={14}
-            rx={7}
-            fill={ARIA_COLORS.terracotta}
-          />
-          <text
-            x={x + ancho - 32}
-            y={14}
-            textAnchor="middle"
-            fontFamily="var(--font-body), sans-serif"
-            fontSize={8}
-            fill={ARIA_COLORS.bone}
-            fontWeight={600}
-            letterSpacing={1}
-          >
-            DISPONIBLE
-          </text>
-        </g>
+        <text
+          x={cx} y={alto - 10}
+          textAnchor="middle"
+          fontFamily="var(--font-body), sans-serif"
+          fontSize={7.5}
+          fill={C.bone}
+          opacity={0.8}
+          letterSpacing={1.5}
+          fontWeight={600}
+          aria-hidden
+        >
+          DISPONIBLE
+        </text>
       )}
 
-      {/* Badge for Proximamente */}
+      {/* Proximamente sub-label */}
       {isProximo && (
-        <g>
-          <rect
-            x={x + ancho - 70}
-            y={4}
-            width={66}
-            height={14}
-            rx={7}
-            fill={ARIA_COLORS.slate}
-          />
-          <text
-            x={x + ancho - 37}
-            y={14}
-            textAnchor="middle"
-            fontFamily="var(--font-body), sans-serif"
-            fontSize={8}
-            fill={ARIA_COLORS.bone}
-            fontWeight={600}
-            letterSpacing={1}
-          >
-            PRÓXIMAMENTE
-          </text>
-        </g>
+        <text
+          x={cx} y={alto - 10}
+          textAnchor="middle"
+          fontFamily="var(--font-body), sans-serif"
+          fontSize={7}
+          fill={C.slate}
+          opacity={0.75}
+          letterSpacing={1}
+          fontWeight={600}
+          aria-hidden
+        >
+          PRÓXIMAMENTE
+        </text>
+      )}
+
+      {/* Selected outline */}
+      {isHighlighted && (
+        <rect
+          x={x + 1} y={1}
+          width={ancho - 2} height={alto - 2}
+          rx={2} fill="none"
+          stroke={C.ink}
+          strokeWidth={1.5}
+          opacity={0.4}
+        />
       )}
     </motion.g>
   );
