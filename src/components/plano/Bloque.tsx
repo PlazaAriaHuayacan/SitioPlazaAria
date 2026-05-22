@@ -3,17 +3,25 @@
 import { motion } from 'framer-motion';
 import type { BloqueLayout } from '@/lib/plano/geometry';
 
+// ── Aria design tokens ────────────────────────────────────────────────────────
 const C = {
   bone:            '#FAF6F0',
-  sand:            '#F1E9DC',
   ink:             '#1F1A14',
   slate:           '#5A544A',
   terracotta:      '#B85A3C',
   terracottaDark:  '#8E3F26',
-  terracottaLight: '#C97458',
-  line:            '#E7DFD1',
+  terracottaLight: '#CC7055',
+  lineColor:       '#E7DFD1',
   cream:           '#EDE7DD',
+  creamDark:       '#C8BFB3',
+  sand:            '#F1E9DC',
+  sandDark:        '#D8CFC3',
 } as const;
+
+// Height reserved for the "glazing / vitrina" strip at the bottom of each unit
+const GLAZING_H = 28;
+// Height of the base threshold strip (depth effect)
+const BASE_H = 5;
 
 type BloqueProps = {
   layout: Extract<BloqueLayout, { type: 'bloque' }>;
@@ -36,38 +44,29 @@ export function Bloque({
   const isDisponible = unidad.estado === 'Disponible';
   const isProximo    = unidad.estado === 'Proximamente';
 
-  // ── Visual fills ────────────────────────────────────────────────────────────
-  const bgFill = isDisponible
-    ? C.terracotta
-    : isProximo
-    ? C.sand
-    : C.cream;
+  const unitId      = unidad.loteIds.join('-');
+  const displayName = unidad.nombre || unitId;
+  const maxChars    = Math.max(4, Math.floor(ancho / 6.5));
+  const truncated   = displayName.length > maxChars
+    ? displayName.slice(0, maxChars - 1) + '…'
+    : displayName;
 
-  const borderColor = isHighlighted
-    ? C.ink
-    : isDisponible
-    ? C.terracottaDark
-    : isProximo
-    ? C.slate
-    : C.line;
+  const cx       = x + ancho / 2;
+  const labelY   = (alto - GLAZING_H) / 2 + 5;
+  const fontSize = Math.min(Math.max(ancho * 0.13, 9), 17);
+  const opacity  = isProximo ? 0.58 : 1;
 
-  const borderWidth = isHighlighted ? 2.5 : isDisponible ? 2 : 1;
-  const textColor   = isDisponible ? C.bone : C.ink;
-  const opacity     = isProximo ? 0.6 : 1;
-
-  // ── Label text ──────────────────────────────────────────────────────────────
-  const unitId    = unidad.loteIds.join('-');
-  // Always prefer the nombre; fall back to unit ID (e.g. "L6-7").
-  // For disponibles, nombre is typically the lot ID anyway.
-  const mainLabel = unidad.nombre || unitId;
-  const maxChars  = Math.max(4, Math.floor(ancho / 7));
-  const truncated = mainLabel.length > maxChars
-    ? mainLabel.slice(0, maxChars - 1) + '…'
-    : mainLabel;
-
-  const cx = x + ancho / 2;
-  const midY = alto / 2;
-  const fontSize = Math.min(Math.max(ancho * 0.14, 9), 18);
+  // Colors per estado
+  const mainFill   = isDisponible ? C.terracotta   : isProximo ? C.sand    : C.cream;
+  const topFill    = isDisponible ? C.terracottaLight : isProximo ? '#F7F1E8' : '#F5EEE6';
+  const baseFill   = isDisponible ? C.terracottaDark  : isProximo ? C.sandDark : C.creamDark;
+  const borderCol  = isHighlighted ? C.ink
+    : isDisponible ? C.terracottaDark
+    : isProximo    ? C.slate
+    : C.lineColor;
+  const borderW    = isHighlighted ? 2.5 : isDisponible ? 1.5 : 1;
+  const textColor  = isDisponible ? C.bone : C.ink;
+  const glazingCol = isDisponible ? 'rgba(250,246,240,0.18)' : 'rgba(200,191,179,0.35)';
 
   const handleEnter  = () => onHoverChange?.(unidad.id);
   const handleLeave  = () => onHoverChange?.(null);
@@ -78,59 +77,86 @@ export function Bloque({
       data-testid={`bloque-${unidad.id}`}
       role="button"
       tabIndex={0}
-      aria-label={`${unidad.nombre || unitId} · ${unidad.estado}`}
+      aria-label={`${displayName} · ${unidad.estado}`}
       style={{ cursor: 'pointer', opacity }}
       animate={{ y: yOffset }}
-      whileHover={{ y: yOffset - 3 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+      whileHover={{ y: yOffset - 4 }}
+      transition={{ type: 'spring', stiffness: 340, damping: 30 }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
       onBlur={handleLeave}
       onClick={handleClick}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); }
       }}
     >
-      {/* Pulse glow for disponibles */}
+      {/* ── Pulse glow for disponibles ──────────────────────────────────── */}
       {isDisponible && (
         <motion.rect
-          x={x - 3} y={-3}
-          width={ancho + 6} height={alto + 6}
-          rx={5} fill="none"
-          stroke={C.terracottaLight}
-          strokeWidth={3}
-          animate={{ opacity: [0, 0.55, 0] }}
-          transition={{ duration: 2.0, repeat: Infinity, ease: 'easeInOut', repeatDelay: 0.5 }}
+          x={x - 4} y={-4}
+          width={ancho + 8} height={alto + 8}
+          rx={6} fill="none"
+          stroke={C.terracottaLight} strokeWidth={3}
+          animate={{ opacity: [0, 0.5, 0] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 0.6 }}
         />
       )}
 
-      {/* Main block */}
+      {/* ── Top highlight strip (light-from-above illusion) ──────────────── */}
+      <rect x={x} y={0} width={ancho} height={6} rx={2} fill={topFill} />
+
+      {/* ── Main storefront body ─────────────────────────────────────────── */}
+      <rect
+        x={x} y={6}
+        width={ancho} height={alto - GLAZING_H - BASE_H - 6}
+        fill={mainFill}
+      />
+
+      {/* ── Glazing / vitrina strip at bottom ────────────────────────────── */}
+      <rect
+        x={x} y={alto - GLAZING_H - BASE_H}
+        width={ancho} height={GLAZING_H}
+        fill={glazingCol}
+      />
+      {/* Thin horizontal line separating body from glazing */}
+      <line
+        x1={x} y1={alto - GLAZING_H - BASE_H}
+        x2={x + ancho} y2={alto - GLAZING_H - BASE_H}
+        stroke={isDisponible ? 'rgba(250,246,240,0.3)' : C.lineColor}
+        strokeWidth={0.8}
+      />
+
+      {/* ── Base threshold (depth cue at very bottom) ─────────────────────── */}
+      <rect
+        x={x} y={alto - BASE_H}
+        width={ancho} height={BASE_H}
+        fill={baseFill} opacity={0.75}
+      />
+
+      {/* ── Outer border ──────────────────────────────────────────────────── */}
       <rect
         x={x} y={0}
         width={ancho} height={alto}
-        rx={3}
-        fill={bgFill}
-        stroke={borderColor}
-        strokeWidth={borderWidth}
+        rx={2}
+        fill="none"
+        stroke={borderCol}
+        strokeWidth={borderW}
       />
 
-      {/* Logo (if available) */}
+      {/* ── Logo or text label ───────────────────────────────────────────── */}
       {unidad.logo?.url ? (
         <image
           href={unidad.logo.url}
           x={cx - Math.min(ancho * 0.35, 28)}
-          y={midY - 18}
+          y={labelY - 18}
           width={Math.min(ancho * 0.7, 56)}
-          height={36}
+          height={32}
           preserveAspectRatio="xMidYMid meet"
         />
       ) : (
         <text
-          x={cx} y={midY + 5}
+          x={cx} y={labelY}
           textAnchor="middle"
           fontFamily="var(--font-display), serif"
           fontSize={fontSize}
@@ -142,49 +168,41 @@ export function Bloque({
         </text>
       )}
 
-      {/* Disponible sub-label: "LIBRE" */}
+      {/* ── "DISPONIBLE" sub-label in glazing strip ──────────────────────── */}
       {isDisponible && (
         <text
-          x={cx} y={alto - 10}
+          x={cx} y={alto - BASE_H - GLAZING_H / 2 + 4}
           textAnchor="middle"
           fontFamily="var(--font-body), sans-serif"
-          fontSize={7.5}
-          fill={C.bone}
-          opacity={0.8}
-          letterSpacing={1.5}
-          fontWeight={600}
+          fontSize={7} fill={C.bone} opacity={0.85}
+          letterSpacing={1.8} fontWeight={600}
           aria-hidden
         >
           DISPONIBLE
         </text>
       )}
 
-      {/* Proximamente sub-label */}
+      {/* ── "PRÓXIMAMENTE" in glazing strip ──────────────────────────────── */}
       {isProximo && (
         <text
-          x={cx} y={alto - 10}
+          x={cx} y={alto - BASE_H - GLAZING_H / 2 + 4}
           textAnchor="middle"
           fontFamily="var(--font-body), sans-serif"
-          fontSize={7}
-          fill={C.slate}
-          opacity={0.75}
-          letterSpacing={1}
-          fontWeight={600}
+          fontSize={6.5} fill={C.slate} opacity={0.8}
+          letterSpacing={1.2} fontWeight={600}
           aria-hidden
         >
           PRÓXIMAMENTE
         </text>
       )}
 
-      {/* Selected outline */}
+      {/* ── Selected highlight overlay ────────────────────────────────────── */}
       {isHighlighted && (
         <rect
           x={x + 1} y={1}
           width={ancho - 2} height={alto - 2}
-          rx={2} fill="none"
-          stroke={C.ink}
-          strokeWidth={1.5}
-          opacity={0.4}
+          rx={1} fill="none"
+          stroke={C.ink} strokeWidth={1.5} opacity={0.35}
         />
       )}
     </motion.g>

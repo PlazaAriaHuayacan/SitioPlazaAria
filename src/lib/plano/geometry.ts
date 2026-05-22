@@ -12,10 +12,11 @@ export const BLOQUE_HEIGHT = 155;
 
 // SVG absolute Y for each unit zone (the `g translate(100,0)` wrapper is still used
 // for horizontal positioning, so y values are absolute SVG coordinates).
-/** Y-top of the Piso 2 interactive unit strip. */
-export const PISO2_UNITS_Y = 52;
-/** Y-top of the Piso 1 interactive unit strip. */
-export const PISO1_UNITS_Y = 253;
+// Layout: Piso 1 is the TOP row, Piso 2 is the BOTTOM row.
+/** Y-top of the Piso 1 interactive unit strip (top row). */
+export const PISO1_UNITS_Y = 52;
+/** Y-top of the Piso 2 interactive unit strip (bottom row). */
+export const PISO2_UNITS_Y = 253;
 
 const LOCAL_GAP = 4;
 const BASE_BLOCK_WIDTH = 70;
