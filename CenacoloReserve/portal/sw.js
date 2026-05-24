@@ -169,7 +169,7 @@ function networkOrQueue(request) {
     // Offline path — read body and enqueue
     return cloned.text().then(function (body) {
       var payload = {};
-      try { payload = JSON.parse(body); } catch (e) { /* non-JSON body */ }
+      try { payload = JSON.parse(body); } catch (e) { console.warn('[SW] networkOrQueue: non-JSON body, queuing with empty payload', e); }
 
       var url    = cloned.url;
       var action = inferAction(new URL(url).pathname, payload);
@@ -205,8 +205,9 @@ function inferAction(path, payload) {
 
 function networkFirstWithCacheFallback(request) {
   return fetch(request).then(function (response) {
-    var clone = response.clone();
-    caches.open(API_CACHE).then(function (cache) { cache.put(request, clone); });
+    if (response.ok) {
+      caches.open(API_CACHE).then(function (cache) { cache.put(request, response.clone()); });
+    }
     return response;
   }).catch(function () {
     return caches.match(request).then(function (cached) {
@@ -255,6 +256,8 @@ function cacheFirstWithTimeout(request, timeoutMs) {
     }).catch(function () {
       return new Response('', { status: 504, statusText: 'Gateway Timeout' });
     });
+  }).catch(function (err) {
+    console.warn('[SW] flushOutbox failed:', err);
   });
 }
 
