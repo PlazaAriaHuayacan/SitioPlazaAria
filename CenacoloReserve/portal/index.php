@@ -139,6 +139,10 @@ $hotelName = resSanitize($concierge['hotel_name'] ?? ($concierge['company_name']
                 </div>
                 <!-- User + Logout -->
                 <div class="flex items-center space-x-4">
+                    <!-- Connection status chip -->
+                    <span id="connStatus" class="flex items-center gap-1.5 text-xs font-medium text-green-400 hidden sm:flex">
+                        <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span> En línea
+                    </span>
                     <a href="<?= resUrl('/portal/commissions.php') ?>" class="text-dark-400 hover:text-gold-400 text-sm hidden sm:block transition-colors">Mis Comisiones</a>
                     <a href="<?= resUrl('/portal/bank-data.php') ?>" class="text-dark-400 hover:text-gold-400 text-sm hidden sm:block transition-colors">Datos Bancarios</a>
                     <div class="text-right hidden sm:block">
@@ -155,6 +159,11 @@ $hotelName = resSanitize($concierge['hotel_name'] ?? ($concierge['company_name']
             </div>
         </div>
     </nav>
+
+    <!-- Offline banner — shown by offline.js when navigator.onLine === false -->
+    <div id="offlineBanner" class="hidden bg-yellow-900 border-b border-yellow-700 text-yellow-200 px-4 py-3 text-sm text-center">
+        📵 <strong>Sin conexión</strong> — los cambios se guardan localmente y se sincronizarán automáticamente al reconectar.
+    </div>
 
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
@@ -367,7 +376,7 @@ $hotelName = resSanitize($concierge['hotel_name'] ?? ($concierge['company_name']
                             </tr>
                         <?php else: ?>
                             <?php foreach ($recentReservations as $res): ?>
-                                <tr class="hover:bg-dark-800/50 transition-colors">
+                                <tr class="hover:bg-dark-800/50 transition-colors" data-reservation-id="<?= $res['id'] ?>">
                                     <td class="px-4 py-3">
                                         <span class="text-xs font-mono text-gold-500"><?= resSanitize($res['confirmation_code']) ?></span>
                                     </td>
@@ -390,6 +399,7 @@ $hotelName = resSanitize($concierge['hotel_name'] ?? ($concierge['company_name']
                                         <span class="text-xs text-dark-300"><?= resSanitize($res['restaurant_name'] ?? '') ?></span>
                                     </td>
                                     <td class="px-4 py-3">
+                                        <span class="offline-badge hidden text-xs px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-300 font-semibold mr-1">⏳ Sin sincronizar</span>
                                         <span class="status-badge status-<?= $res['status'] ?>">
                                             <?= ucfirst(str_replace('_', ' ', $res['status'])) ?>
                                         </span>
@@ -449,5 +459,7 @@ $hotelName = resSanitize($concierge['hotel_name'] ?? ($concierge['company_name']
         }
     </script>
 
+    <script src="<?= resUrl('/portal/js/idb.js') ?>"></script>
+    <script src="<?= resUrl('/portal/js/offline.js') ?>"></script>
 </body>
 </html>
