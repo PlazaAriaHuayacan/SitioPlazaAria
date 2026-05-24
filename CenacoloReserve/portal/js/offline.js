@@ -1,7 +1,7 @@
 /**
  * Cenacolo Offline — page-side Service Worker manager + UX layer.
  * Must be loaded AFTER portal/js/idb.js.
- * Exposes window.CenacoloOffline = { showToast, refreshConnChip }
+ * Exposes window.CenacoloOffline = { showToast, refreshConnChip, updateOfflineBadges, showConflictModal }
  */
 (function () {
   'use strict';
