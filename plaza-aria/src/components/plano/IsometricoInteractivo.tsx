@@ -148,6 +148,21 @@ function IsometricoInner({
           aria-hidden={!debug}
           role={debug ? 'img' : undefined}
         >
+          {/* Debug crosshair */}
+          {debug && mousePos && (() => {
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (!rect) return null;
+            const ix = mousePos.x / rect.width  * IMG_W;
+            const iy = mousePos.y / rect.height * IMG_H;
+            return (
+              <g pointerEvents="none">
+                <line x1={ix} y1={0}    x2={ix} y2={IMG_H} stroke="rgba(0,180,255,0.7)" strokeWidth={1.5} />
+                <line x1={0}  y1={iy}   x2={IMG_W} y2={iy}  stroke="rgba(0,180,255,0.7)" strokeWidth={1.5} />
+                <circle cx={ix} cy={iy} r={6} fill="none" stroke="rgba(0,180,255,0.9)" strokeWidth={2} />
+              </g>
+            );
+          })()}
+
           {resolvedHotspots.map((h, i) => {
             const unit    = h.unit;
             const isDisp  = unit?.estado === 'Disponible';
@@ -249,6 +264,22 @@ function IsometricoInner({
             🔵 = hotspot outline &nbsp;|&nbsp; ?debug=1 active
           </div>
         )}
+
+        {/* Debug coordinate readout — shows image-space coords under cursor */}
+        {debug && mousePos && (() => {
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (!rect) return null;
+          const ix = Math.round(mousePos.x / rect.width  * IMG_W);
+          const iy = Math.round(mousePos.y / rect.height * IMG_H);
+          return (
+            <div
+              className="absolute top-2 right-2 z-30 pointer-events-none select-none
+                         bg-black/75 text-white font-mono text-xs px-2 py-1 rounded"
+            >
+              x={ix} &nbsp; y={iy}
+            </div>
+          );
+        })()}
       </div>
 
       <PlanoTooltip unidad={hoveredUnit} position={mousePos} />
