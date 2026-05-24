@@ -405,9 +405,9 @@ $hotelName = resSanitize($concierge['hotel_name'] ?? '');
                     const details = [];
                     if (result.data.guest_name)       details.push('<strong>Huesped:</strong> '      + escapeHtml(result.data.guest_name));
                     if (result.data.restaurant_name)  details.push('<strong>Restaurante:</strong> '  + escapeHtml(result.data.restaurant_name));
-                    if (result.data.reservation_date) details.push('<strong>Fecha:</strong> '         + result.data.reservation_date);
-                    if (result.data.reservation_time) details.push('<strong>Hora:</strong> '          + formatTime(result.data.reservation_time));
-                    if (result.data.party_size)       details.push('<strong>Personas:</strong> '      + result.data.party_size);
+                    if (result.data.reservation_date) details.push('<strong>Fecha:</strong> '         + escapeHtml(result.data.reservation_date));
+                    if (result.data.reservation_time) details.push('<strong>Hora:</strong> '          + escapeHtml(formatTime(result.data.reservation_time)));
+                    if (result.data.party_size)       details.push('<strong>Personas:</strong> '      + escapeHtml(String(result.data.party_size)));
                     document.getElementById('successDetails').innerHTML = details.join(' &middot; ');
 
                     showToast('Reserva creada exitosamente', 'success');
