@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { listLocales, listEventos } from '@/lib/airtable/client';
-import { PlanoInteractivo } from '@/components/plano/PlanoInteractivo';
+import { IsometricoInteractivo } from '@/components/plano/IsometricoInteractivo';
 import { agruparPorUnidad } from '@/lib/plano/agrupar';
 import type { Local, Evento } from '@/types/domain';
 
@@ -174,7 +174,7 @@ export default async function RentaPage() {
             están disponibles ahora mismo.
           </p>
           <div className="mt-10 rounded-card border border-aria-line/60 bg-white p-3 md:p-6 shadow-card">
-            <PlanoInteractivo unidades={unidades} />
+            <IsometricoInteractivo unidades={unidades} />
           </div>
         </div>
       </section>
