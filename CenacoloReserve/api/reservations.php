@@ -675,6 +675,22 @@ function handlePut() {
         jsonResponse(['error' => 'Reserva no encontrada'], 404);
     }
 
+    // --- Conflict detection for offline-sync writes ---
+    $clientVersion = intval($input['client_version'] ?? 0);
+    $forceWrite    = !empty($input['force']);
+
+    if ($clientVersion > 0 && !$forceWrite) {
+        $vStmt = $pdo->prepare("SELECT UNIX_TIMESTAMP(updated_at) AS server_version FROM reservations WHERE id = ?");
+        $vStmt->execute([$reservationId]);
+        $vRow = $vStmt->fetch();
+        if ($vRow && intval($vRow['server_version']) > $clientVersion) {
+            jsonResponse([
+                'conflict'    => true,
+                'server_data' => $current
+            ], 409);
+        }
+    }
+
     // Determinar quien actualiza
     $changedBy     = null;
     $changedByType = 'staff';
