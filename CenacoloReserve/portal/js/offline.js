@@ -84,6 +84,8 @@
           chip.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span> En línea';
           chip.onclick   = null;
         }
+      }).catch(function (err) {
+        console.warn('[Cenacolo] refreshConnChip outbox read failed:', err);
       });
     }).catch(function () {
       // IDB not yet available — show basic status
@@ -117,6 +119,8 @@
           badge.classList.add('hidden');
         }
       });
+    }).catch(function (err) {
+      console.warn('[Cenacolo] updateOfflineBadges failed:', err);
     });
   }
 
@@ -137,8 +141,12 @@
 
   // ── Conflict modal ─────────────────────────────────────────────────────────
 
+  var _modalOpen = false;
+
   function showConflictModal(conflicts) {
     if (!conflicts || conflicts.length === 0) return;
+    if (_modalOpen) return;
+    _modalOpen = true;
 
     var actionLabels = {
       update_reservation_status : 'Cambio de estado',
@@ -196,9 +204,15 @@
           body    : JSON.stringify(forcePayload)
         }).then(function (resp) {
           if (resp.ok) {
-            CenacoloIDB.idbDelete('conflicts', c.id);
-            conflicts.splice(idx, 1);
-            next();
+            CenacoloIDB.idbDelete('conflicts', c.id)
+              .then(function () {
+                conflicts.splice(idx, 1);
+                next();
+              })
+              .catch(function (err) {
+                console.warn('[Cenacolo] Failed to delete conflict from IDB:', err);
+                showToast('Error al limpiar el conflicto. Recarga la página.', 'error');
+              });
           } else {
             showToast('Error al forzar el cambio. Intenta más tarde.', 'error');
           }
@@ -208,9 +222,15 @@
       };
 
       document.getElementById('btnUseServer').onclick = function () {
-        CenacoloIDB.idbDelete('conflicts', c.id);
-        conflicts.splice(idx, 1);
-        next();
+        CenacoloIDB.idbDelete('conflicts', c.id)
+          .then(function () {
+            conflicts.splice(idx, 1);
+            next();
+          })
+          .catch(function (err) {
+            console.warn('[Cenacolo] Failed to delete conflict from IDB:', err);
+            showToast('Error al limpiar el conflicto. Recarga la página.', 'error');
+          });
       };
     }
 
@@ -218,6 +238,7 @@
       var modal = document.getElementById('conflictModal');
       if (modal) modal.remove();
       if (conflicts.length === 0) {
+        _modalOpen = false;
         showToast('✅ Todos los conflictos resueltos', 'success');
         refreshConnChip();
       } else {
