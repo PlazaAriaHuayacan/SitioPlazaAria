@@ -13,6 +13,9 @@
 
   function openDB() {
     if (_db) return Promise.resolve(_db);
+    if (!window.indexedDB) {
+      return Promise.reject(new Error('IndexedDB not available in this browser'));
+    }
     return new Promise(function (resolve, reject) {
       var req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = function (e) {
@@ -91,6 +94,9 @@
   }
 
   function uuid() {
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
       var r = Math.random() * 16 | 0;
       return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
