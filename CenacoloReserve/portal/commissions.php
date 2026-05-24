@@ -59,9 +59,19 @@ $commissions = $stmt->fetchAll();
                 <span class="text-slate-600 text-xs">|</span>
                 <span class="text-slate-400 text-xs uppercase tracking-wider">Portal Concierge</span>
             </div>
-            <a href="<?= resUrl('/portal/index.php') ?>" class="text-slate-400 hover:text-gold-400 text-sm transition-colors">&larr; Dashboard</a>
+            <div class="flex items-center gap-4">
+                <span id="connStatus" class="flex items-center gap-1.5 text-xs font-medium text-green-400 hidden sm:flex">
+                    <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span> En línea
+                </span>
+                <a href="<?= resUrl('/portal/index.php') ?>" class="text-slate-400 hover:text-gold-400 text-sm transition-colors">&larr; Dashboard</a>
+            </div>
         </div>
     </nav>
+
+    <!-- Offline banner -->
+    <div id="offlineBanner" class="hidden bg-yellow-900 border-b border-yellow-700 text-yellow-200 px-4 py-3 text-sm text-center">
+        📵 <strong>Sin conexión</strong> — mostrando datos guardados localmente.
+    </div>
 
     <main class="max-w-5xl mx-auto px-4 py-8">
 
@@ -140,5 +150,8 @@ $commissions = $stmt->fetchAll();
         </div>
 
     </main>
+
+    <script src="<?= resUrl('/portal/js/idb.js') ?>"></script>
+    <script src="<?= resUrl('/portal/js/offline.js') ?>"></script>
 </body>
 </html>

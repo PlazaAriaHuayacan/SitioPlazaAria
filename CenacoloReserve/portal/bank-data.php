@@ -36,13 +36,30 @@ $hasBank = !empty($concierge['bank_clabe']);
                 <span class="text-slate-600 text-xs">|</span>
                 <span class="text-slate-400 text-xs uppercase tracking-wider">Portal Concierge</span>
             </div>
-            <a href="<?= resUrl('/portal/index.php') ?>" class="text-slate-400 hover:text-gold-400 text-sm transition-colors">
-                &larr; Volver al dashboard
-            </a>
+            <div class="flex items-center gap-4">
+                <span id="connStatus" class="flex items-center gap-1.5 text-xs font-medium text-green-400 hidden sm:flex">
+                    <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span> En línea
+                </span>
+                <a href="<?= resUrl('/portal/index.php') ?>" class="text-slate-400 hover:text-gold-400 text-sm transition-colors">
+                    &larr; Volver al dashboard
+                </a>
+            </div>
         </div>
     </nav>
 
+    <!-- Offline banner -->
+    <div id="offlineBanner" class="hidden bg-yellow-900 border-b border-yellow-700 text-yellow-200 px-4 py-3 text-sm text-center">
+        📵 <strong>Sin conexión</strong> — los datos bancarios requieren conexión al servidor.
+    </div>
+
     <main class="max-w-2xl mx-auto px-4 py-8">
+
+        <!-- Offline overlay — blocks form when offline; bank data requires server connection -->
+        <div id="bankOfflineOverlay" class="hidden bg-dark-900 border border-yellow-700/40 rounded-xl p-8 text-center mb-6">
+            <span class="text-4xl block mb-3">📵</span>
+            <h3 class="text-white font-semibold text-lg mb-2">Conexión requerida</h3>
+            <p class="text-slate-400 text-sm">Los datos bancarios se procesan de forma segura en el servidor.<br>Reconecta a internet para registrar o actualizar tu información bancaria.</p>
+        </div>
 
         <h2 class="text-2xl font-semibold text-white mb-2">Mis Datos Bancarios</h2>
         <p class="text-slate-400 text-sm mb-6">Registra tu CLABE para recibir tus comisiones vía SPEI.</p>
@@ -183,6 +200,27 @@ $hasBank = !empty($concierge['bank_clabe']);
                 alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         });
+    </script>
+
+    <script src="<?= resUrl('/portal/js/idb.js') ?>"></script>
+    <script src="<?= resUrl('/portal/js/offline.js') ?>"></script>
+    <script>
+        // bank-data.php: show overlay and dim form when offline
+        function updateBankOfflineState() {
+            var overlay = document.getElementById('bankOfflineOverlay');
+            var form    = document.getElementById('bankForm');
+            if (!overlay || !form) return;
+            if (!navigator.onLine) {
+                overlay.classList.remove('hidden');
+                form.classList.add('opacity-30', 'pointer-events-none');
+            } else {
+                overlay.classList.add('hidden');
+                form.classList.remove('opacity-30', 'pointer-events-none');
+            }
+        }
+        window.addEventListener('online',  updateBankOfflineState);
+        window.addEventListener('offline', updateBankOfflineState);
+        document.addEventListener('DOMContentLoaded', updateBankOfflineState);
     </script>
 
 </body>
