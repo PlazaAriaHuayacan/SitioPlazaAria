@@ -152,6 +152,9 @@ $conciergeName = resSanitize($concierge['name']);
 
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
 
+    <script src="<?= resUrl('/portal/js/idb.js') ?>"></script>
+    <script src="<?= resUrl('/portal/js/offline.js') ?>"></script>
+
     <script>
         var RESTAURANT_ID    = <?= (int) $selectedRestaurantId ?>;
         var API_TABLES_URL   = '<?= resUrl('/api/tables.php') ?>';
@@ -193,9 +196,10 @@ $conciergeName = resSanitize($concierge['name']);
                     console.warn('[Floorplan] Network error, trying IDB snapshot:', err);
                     return renderFromIDB();
                 })
-                .finally(function () {
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                });
+                .then(
+                    function () { document.getElementById('loadingSpinner').classList.add('hidden'); },
+                    function () { document.getElementById('loadingSpinner').classList.add('hidden'); }
+                );
         }
 
         function renderFromIDB() {
@@ -298,9 +302,10 @@ $conciergeName = resSanitize($concierge['name']);
             var label = statusLabels[t.status] || escHtml(t.status);
             var tableName = t.name || ('Mesa ' + t.table_number);
 
-            // onclick only for available tables — using data attributes to avoid inline JS injection
+            // onclick only for available tables — JSON.stringify gives a double-quoted JS string,
+            // escHtmlAttr encodes the surrounding quotes as &quot; for the HTML attribute context.
             var clickAttr = t.status === 'available'
-                ? 'onclick="openAssignModal(' + (int(t.id)) + ', \'' + escHtmlAttr(tableName) + '\')"'
+                ? 'onclick="openAssignModal(' + int(t.id) + ', ' + escHtmlAttr(JSON.stringify(tableName)) + ')"'
                 : '';
 
             var guestInfo = '';
@@ -378,7 +383,7 @@ $conciergeName = resSanitize($concierge['name']);
             }
             container.innerHTML = reservations.map(function (r) {
                 return [
-                    '<button onclick="assignTable(' + int(r.id) + ', ' + JSON.stringify(escHtml(r.guest_name || '')) + ')"',
+                    '<button onclick="assignTable(' + int(r.id) + ', ' + escHtmlAttr(JSON.stringify(r.guest_name || '')) + ')"',
                         ' class="w-full text-left px-3 py-2.5 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors border border-slate-700">',
                         '<p class="text-sm text-white font-medium">' + escHtml(r.guest_name || '—') + '</p>',
                         '<p class="text-xs text-slate-400">' + escHtml(r.confirmation_code || '') + ' &middot; ' + escHtml(r.reservation_time || '') + ' &middot; ' + int(r.party_size) + ' pax</p>',
@@ -461,8 +466,5 @@ $conciergeName = resSanitize($concierge['name']);
             }
         });
     </script>
-
-    <script src="<?= resUrl('/portal/js/idb.js') ?>"></script>
-    <script src="<?= resUrl('/portal/js/offline.js') ?>"></script>
 </body>
 </html>
