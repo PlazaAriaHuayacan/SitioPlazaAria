@@ -132,7 +132,9 @@
       refreshConnChip();
       updateOfflineBadges();
       if (data.conflicts > 0) {
-        CenacoloIDB.idbGetAll('conflicts').then(showConflictModal);
+        CenacoloIDB.idbGetAll('conflicts')
+          .then(showConflictModal)
+          .catch(function (err) { console.warn('[Cenacolo] handleSWMessage conflicts read failed:', err); });
       } else {
         showToast('✅ Todo sincronizado', 'success');
       }
