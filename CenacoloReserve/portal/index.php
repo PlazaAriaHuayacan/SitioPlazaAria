@@ -376,7 +376,7 @@ $hotelName = resSanitize($concierge['hotel_name'] ?? ($concierge['company_name']
                             </tr>
                         <?php else: ?>
                             <?php foreach ($recentReservations as $res): ?>
-                                <tr class="hover:bg-dark-800/50 transition-colors" data-reservation-id="<?= $res['id'] ?>">
+                                <tr class="hover:bg-dark-800/50 transition-colors" data-reservation-id="<?= (int) $res['id'] ?>">
                                     <td class="px-4 py-3">
                                         <span class="text-xs font-mono text-gold-500"><?= resSanitize($res['confirmation_code']) ?></span>
                                     </td>
