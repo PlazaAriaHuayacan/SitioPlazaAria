@@ -44,11 +44,11 @@ export interface HotspotDef {
 //   DEPTH_DX = x shift from front to back                (back edge slightly right — isometric view from upper-right)
 //   P2_YOF   = how many px piso 2 floats above piso 1    (screen gap ≈ 730px → 427)
 //
-const P1_Y0    = 1161;
-const SLOPE    = -0.12;
-const DEPTH_DY = 341;
-const DEPTH_DX = 50;    // back of unit appears slightly to the right of front
-const P2_YOF   = 427;
+const P1_Y0    = 1013;   // front-left of piso 1 floor (measured from debug screenshot)
+const SLOPE    = -0.062; // y change per x pixel along building length (gentle tilt)
+const DEPTH_DY = 234;    // front-to-back pixel depth of visible interior floor
+const DEPTH_DX = 50;     // back edge shifts ~50px right (isometric from upper-right)
+const P2_YOF   = 399;    // piso 2 floats this many px above piso 1
 
 function yFront(x: number): number {
   return P1_Y0 + (x - X_LEFT) * SLOPE;
