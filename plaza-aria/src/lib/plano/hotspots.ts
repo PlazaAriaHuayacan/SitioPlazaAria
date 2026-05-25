@@ -52,15 +52,21 @@ export interface HotspotDef {
 //   - Piso 1 visible band sits in lower-middle of image (y ≈ 1090–1400)
 //   - Piso 2 visible band sits in upper-middle of image (y ≈ 510–820)
 //   - Inter-floor visual gap ≈ 580 px (much larger than a single floor depth)
-// Iteration 9: fix polygon skew and refine slope.
-// Standard axonometric: vertical walls in real-world stay vertical in image → DEPTH_DX = 0
-// Visual inspection of grid: building diagonal is steeper than -0.03 (closer to -0.04).
-// Re-derive P1_Y0 from user click (483, 1160) with new SLOPE.
-const P1_Y0    = 1175;   // recomputed: 1160 + (120−483)·(−0.04) = 1175
-const SLOPE    = -0.04;  // steeper diagonal, matches actual building length axis
-const DEPTH_DY = 280;    // cover full visible facade height
-const DEPTH_DX = 0;      // CRITICAL: zero — no lateral skew, vertical unit walls
-const P2_YOF   = 440;    // gap from user click on piso 2 (531, 719)
+// Iteration 10: slope refined from grid measurements at building extremes.
+// User pinpointed two new anchors via ?debug=1 grid:
+//   (262, 1118) — bottom-LEFT extension of piso 1
+//   (2067, 603) — bottom-RIGHT of piso 2
+// Combined with earlier anchors (483, 1160) piso 1 and (531, 719) piso 2,
+// visible building diagonal slope ≈ -0.05 (between -0.045 and -0.07 derivable).
+// Re-derive constants with SLOPE = -0.05:
+//   P1_Y0  = 1160 + (120 − 483)·(−0.05) = 1178
+//   P2_y   = 719  + (120 − 531)·(−0.05) = 740
+//   P2_YOF = 1178 − 740 = 438 ≈ 440
+const P1_Y0    = 1178;
+const SLOPE    = -0.05;  // matches average building diagonal across both pisos
+const DEPTH_DY = 220;    // reduced from 280 to fit visible unit height (was overshooting)
+const DEPTH_DX = 0;      // keep zero — no lateral skew
+const P2_YOF   = 440;
 
 function yFront(x: number): number {
   return P1_Y0 + (x - X_LEFT) * SLOPE;
