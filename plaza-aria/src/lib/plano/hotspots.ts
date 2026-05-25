@@ -36,19 +36,27 @@ export interface HotspotDef {
 
 // ─── Projection constants ─────────────────────────────────────────────────────
 //
-// Calibrated from screenshot analysis (image = 2528×1684, screen scale ≈ 0.586):
+// CRITICAL INSIGHT (iteration 5): plano.png is an EXPLODED isometric view —
+// piso 2 is drawn floating significantly above piso 1 with a large visual gap.
+// This is NOT a normal stacked 2-story building view, so P2_YOF must be much
+// larger than typical floor-to-floor distance.
 //
-//   P1_Y0    = y of front-left corner of piso 1 floor   (screen band bottom ≈ 680px → 1161)
-//   SLOPE    = -Δy per Δx along the building length      (right side higher up in image)
-//   DEPTH_DY = y rise from front edge to back edge       (screen band height ≈ 200px → 341)
-//   DEPTH_DX = x shift from front to back                (back edge slightly right — isometric view from upper-right)
-//   P2_YOF   = how many px piso 2 floats above piso 1    (screen gap ≈ 730px → 427)
+// Parameters describe a parallelogram-shaped floor hotspot per unit:
+//   P1_Y0    = y of front-left corner of piso 1 visible floor (lower band edge)
+//   SLOPE    = dy/dx along the building length (right end's vertical drift)
+//   DEPTH_DY = y rise from front edge to back edge (parallelogram height)
+//   DEPTH_DX = x shift from front to back (lateral isometric shift)
+//   P2_YOF   = pixels piso 2 floats above piso 1 (LARGE in exploded view)
 //
-const P1_Y0    = 1013;   // front-left of piso 1 floor (measured from debug screenshot)
-const SLOPE    = -0.062; // y change per x pixel along building length (gentle tilt)
-const DEPTH_DY = 234;    // front-to-back pixel depth of visible interior floor
-const DEPTH_DX = 50;     // back edge shifts ~50px right (isometric from upper-right)
-const P2_YOF   = 399;    // piso 2 floats this many px above piso 1
+// Re-derived from direct inspection of plano.png (2528×1684):
+//   - Piso 1 visible band sits in lower-middle of image (y ≈ 1090–1400)
+//   - Piso 2 visible band sits in upper-middle of image (y ≈ 510–820)
+//   - Inter-floor visual gap ≈ 580 px (much larger than a single floor depth)
+const P1_Y0    = 1400;
+const SLOPE    = -0.03;
+const DEPTH_DY = 310;
+const DEPTH_DX = 50;
+const P2_YOF   = 580;
 
 function yFront(x: number): number {
   return P1_Y0 + (x - X_LEFT) * SLOPE;
