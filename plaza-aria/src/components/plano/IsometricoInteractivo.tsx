@@ -148,7 +148,7 @@ function IsometricoInner({
           aria-hidden={!debug}
           role={debug ? 'img' : undefined}
         >
-          {/* Debug crosshair */}
+          {/* Debug crosshair — uses non-scaling-stroke so lines stay 2px regardless of viewBox scale */}
           {debug && mousePos && (() => {
             const rect = containerRef.current?.getBoundingClientRect();
             if (!rect) return null;
@@ -156,9 +156,15 @@ function IsometricoInner({
             const iy = mousePos.y / rect.height * IMG_H;
             return (
               <g pointerEvents="none">
-                <line x1={ix} y1={0}    x2={ix} y2={IMG_H} stroke="rgba(0,180,255,0.7)" strokeWidth={1.5} />
-                <line x1={0}  y1={iy}   x2={IMG_W} y2={iy}  stroke="rgba(0,180,255,0.7)" strokeWidth={1.5} />
-                <circle cx={ix} cy={iy} r={6} fill="none" stroke="rgba(0,180,255,0.9)" strokeWidth={2} />
+                <line x1={ix} y1={0}    x2={ix} y2={IMG_H}
+                      stroke="#00B4FF" strokeWidth={2}
+                      vectorEffect="non-scaling-stroke" />
+                <line x1={0}  y1={iy}   x2={IMG_W} y2={iy}
+                      stroke="#00B4FF" strokeWidth={2}
+                      vectorEffect="non-scaling-stroke" />
+                <circle cx={ix} cy={iy} r={14} fill="none"
+                        stroke="#00B4FF" strokeWidth={3}
+                        vectorEffect="non-scaling-stroke" />
               </g>
             );
           })()}
@@ -265,21 +271,23 @@ function IsometricoInner({
           </div>
         )}
 
-        {/* Debug coordinate readout — shows image-space coords under cursor */}
-        {debug && mousePos && (() => {
-          const rect = containerRef.current?.getBoundingClientRect();
-          if (!rect) return null;
-          const ix = Math.round(mousePos.x / rect.width  * IMG_W);
-          const iy = Math.round(mousePos.y / rect.height * IMG_H);
-          return (
-            <div
-              className="absolute top-2 right-2 z-30 pointer-events-none select-none
-                         bg-black/75 text-white font-mono text-xs px-2 py-1 rounded"
-            >
-              x={ix} &nbsp; y={iy}
-            </div>
-          );
-        })()}
+        {/* Debug coordinate readout — large, fixed top-right, always visible while hovering */}
+        {debug && (
+          <div
+            className="absolute top-3 right-3 z-30 pointer-events-none select-none
+                       bg-black/85 text-[#00B4FF] font-mono text-base px-4 py-2 rounded-md
+                       shadow-lg border border-[#00B4FF]/40 min-w-[180px] text-center"
+          >
+            {mousePos && containerRef.current ? (() => {
+              const rect = containerRef.current.getBoundingClientRect();
+              const ix = Math.round(mousePos.x / rect.width  * IMG_W);
+              const iy = Math.round(mousePos.y / rect.height * IMG_H);
+              return <span>x={ix} &nbsp; y={iy}</span>;
+            })() : (
+              <span className="text-white/60 text-xs">Mueve el cursor sobre la imagen</span>
+            )}
+          </div>
+        )}
       </div>
 
       <PlanoTooltip unidad={hoveredUnit} position={mousePos} />
