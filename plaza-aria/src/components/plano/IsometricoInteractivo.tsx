@@ -148,7 +148,48 @@ function IsometricoInner({
           aria-hidden={!debug}
           role={debug ? 'img' : undefined}
         >
-          {/* Debug crosshair — uses non-scaling-stroke so lines stay 2px regardless of viewBox scale */}
+          {/* ── Debug grid: image-space coordinate ruler ─────────────────────
+              Dibuja líneas cada 100 px (y) y 200 px (x) en el espacio 2528×1684
+              con etiquetas numéricas, para que se pueda leer la posición de
+              cualquier punto del edificio sin depender de eventos del mouse. */}
+          {debug && (
+            <g pointerEvents="none">
+              {/* Vertical grid lines every 200 image-px */}
+              {Array.from({ length: Math.floor(IMG_W / 200) + 1 }, (_, i) => i * 200).map((x) => (
+                <line key={`gx-${x}`}
+                      x1={x} y1={0} x2={x} y2={IMG_H}
+                      stroke="#0066FF" strokeOpacity="0.35" strokeWidth={1}
+                      strokeDasharray="6 6"
+                      vectorEffect="non-scaling-stroke" />
+              ))}
+              {/* Horizontal grid lines every 100 image-px */}
+              {Array.from({ length: Math.floor(IMG_H / 100) + 1 }, (_, i) => i * 100).map((y) => (
+                <line key={`gy-${y}`}
+                      x1={0} y1={y} x2={IMG_W} y2={y}
+                      stroke="#0066FF" strokeOpacity="0.35" strokeWidth={1}
+                      strokeDasharray="6 6"
+                      vectorEffect="non-scaling-stroke" />
+              ))}
+              {/* X labels along the top */}
+              {Array.from({ length: Math.floor(IMG_W / 200) + 1 }, (_, i) => i * 200).map((x) => (
+                <text key={`gxl-${x}`} x={x + 6} y={36}
+                      fontSize={28} fontFamily="monospace" fontWeight={700}
+                      fill="#0066FF" fillOpacity="0.85">
+                  {x}
+                </text>
+              ))}
+              {/* Y labels along the left side */}
+              {Array.from({ length: Math.floor(IMG_H / 100) + 1 }, (_, i) => i * 100).map((y) => (
+                <text key={`gyl-${y}`} x={8} y={y - 6}
+                      fontSize={24} fontFamily="monospace" fontWeight={700}
+                      fill="#0066FF" fillOpacity="0.85">
+                  {y}
+                </text>
+              ))}
+            </g>
+          )}
+
+          {/* Debug crosshair under cursor (only when mousePos exists) */}
           {debug && mousePos && (() => {
             const rect = containerRef.current?.getBoundingClientRect();
             if (!rect) return null;

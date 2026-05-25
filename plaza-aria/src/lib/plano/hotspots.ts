@@ -52,11 +52,15 @@ export interface HotspotDef {
 //   - Piso 1 visible band sits in lower-middle of image (y ≈ 1090–1400)
 //   - Piso 2 visible band sits in upper-middle of image (y ≈ 510–820)
 //   - Inter-floor visual gap ≈ 580 px (much larger than a single floor depth)
-const P1_Y0    = 1400;
+// Iteration 6: shorter parallelograms positioned lower over visible floors.
+// The visible floor of each unit is a relatively thin band, not a deep box —
+// previous DEPTH_DY=310 made bands cover back walls + roof. DEPTH_DY=220 fits
+// the actual visible floor depth in this isometric projection.
+const P1_Y0    = 1500;   // was 1400 — shift piso 1 band down to cover floor not back wall
 const SLOPE    = -0.03;
-const DEPTH_DY = 310;
-const DEPTH_DX = 50;
-const P2_YOF   = 580;
+const DEPTH_DY = 220;    // was 310 — shorter band, only covers visible floor depth
+const DEPTH_DX = 30;     // was 50 — slighter lateral isometric shift
+const P2_YOF   = 480;    // was 580 — slightly less gap (piso 2 was correct)
 
 function yFront(x: number): number {
   return P1_Y0 + (x - X_LEFT) * SLOPE;
