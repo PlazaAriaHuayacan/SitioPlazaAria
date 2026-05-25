@@ -52,38 +52,56 @@ export interface HotspotDef {
 //   - Piso 1 visible band sits in lower-middle of image (y ≈ 1090–1400)
 //   - Piso 2 visible band sits in upper-middle of image (y ≈ 510–820)
 //   - Inter-floor visual gap ≈ 580 px (much larger than a single floor depth)
-// Iteration 10: slope refined from grid measurements at building extremes.
-// User pinpointed two new anchors via ?debug=1 grid:
-//   (262, 1118) — bottom-LEFT extension of piso 1
-//   (2067, 603) — bottom-RIGHT of piso 2
-// Combined with earlier anchors (483, 1160) piso 1 and (531, 719) piso 2,
-// visible building diagonal slope ≈ -0.05 (between -0.045 and -0.07 derivable).
-// Re-derive constants with SLOPE = -0.05:
-//   P1_Y0  = 1160 + (120 − 483)·(−0.05) = 1178
-//   P2_y   = 719  + (120 − 531)·(−0.05) = 740
-//   P2_YOF = 1178 − 740 = 438 ≈ 440
-const P1_Y0    = 1178;
-const SLOPE    = -0.05;  // matches average building diagonal across both pisos
-const DEPTH_DY = 220;    // reduced from 280 to fit visible unit height (was overshooting)
-const DEPTH_DX = 0;      // keep zero — no lateral skew
-const P2_YOF   = 440;
+// ── Iteration 11: per-piso X bounds + steeper slope ─────────────────────────
+//
+// Visual inspection of plano.png shows piso 1 and piso 2 wings do NOT have
+// the same left/right extents — piso 2 is slightly wider. Likewise, slope
+// derived from the two piso 2 anchors (531, 719) and (2067, 603) is steeper
+// than from one piso 1 anchor alone:
+//   SLOPE = (603 − 719) / (2067 − 531) = −0.0755 → round to −0.07
+//
+// Each piso has its own:
+//   - X_LEFT / X_RIGHT   (where the wing begins and ends in image space)
+//   - Y0                 (front-bottom y at X_LEFT)
+//   - DEPTH_DY           (visible facade height)
+//
+// SLOPE is shared (both wings parallel along the same building diagonal).
+// DEPTH_DX = 0 (axonometric: vertical real walls stay vertical in image).
 
-function yFront(x: number): number {
-  return P1_Y0 + (x - X_LEFT) * SLOPE;
-}
+const SLOPE    = -0.07;
+const DEPTH_DX = 0;
 
-/** Build a parallelogram for piso 1 — front edge at bottom, back edge shifted up+right */
+// PISO 1 (lower wing, with palm trees and parking in front)
+const P1_X_LEFT  = 290;
+const P1_X_RIGHT = 2300;
+const P1_Y0      = 1174;   // = 1160 + (290 − 483) · (−0.07) → anchored to user click (483, 1160)
+const P1_DEPTH_Y = 180;    // visible facade height for piso 1 units (~180 px)
+
+// PISO 2 (upper wing, set back behind piso 1)
+const P2_X_LEFT  = 260;
+const P2_X_RIGHT = 2360;
+const P2_Y0      = 738;    // = 719 + (260 − 531) · (−0.07) → anchored to user click (531, 719)
+const P2_DEPTH_Y = 240;    // visible facade height for piso 2 units (~240 px, slightly taller)
+
+function yFront1(x: number): number { return P1_Y0 + (x - P1_X_LEFT) * SLOPE; }
+function yFront2(x: number): number { return P2_Y0 + (x - P2_X_LEFT) * SLOPE; }
+
+/** Build a parallelogram for piso 1 — front edge at bottom, back edge above */
 function poly1(x0: number, x1: number): [number, number][] {
   return [
-    [x0,             yFront(x0)],                      // front-left
-    [x1,             yFront(x1)],                      // front-right
-    [x1 + DEPTH_DX,  yFront(x1) - DEPTH_DY],          // back-right
-    [x0 + DEPTH_DX,  yFront(x0) - DEPTH_DY],          // back-left
+    [x0,             yFront1(x0)],                       // front-left
+    [x1,             yFront1(x1)],                       // front-right
+    [x1 + DEPTH_DX,  yFront1(x1) - P1_DEPTH_Y],         // back-right
+    [x0 + DEPTH_DX,  yFront1(x0) - P1_DEPTH_Y],         // back-left
   ];
 }
-/** Same footprint, elevated by P2_YOF */
 function poly2(x0: number, x1: number): [number, number][] {
-  return poly1(x0, x1).map(([px, py]) => [px, py - P2_YOF]) as [number, number][];
+  return [
+    [x0,             yFront2(x0)],
+    [x1,             yFront2(x1)],
+    [x1 + DEPTH_DX,  yFront2(x1) - P2_DEPTH_Y],
+    [x0 + DEPTH_DX,  yFront2(x0) - P2_DEPTH_Y],
+  ];
 }
 
 // ─── Unit widths (proportional to FACADE width, not total m²) ────────────────
@@ -95,12 +113,8 @@ function poly2(x0: number, x1: number): [number, number][] {
 // Piso 1: L1(2x), L2-L5(1x each), L6-7(2x), [stairs], L8-9(2x), L10-L13(1x each), L14-15(3x)
 // Piso 2: L16-17-18(3x), L19-L23(1x each), [stairs], L24-L27(1x each), L28-29(2x), L30-31(2x)
 
-const X_LEFT  = 120;
-const X_RIGHT = 2450;
-const SPAN    = X_RIGHT - X_LEFT; // 2330px
-
 // Build a list of [loteKeys, relative_width] segments for a piso,
-// then scale them to fill SPAN and return HotspotDef[]
+// scale them to fill the piso's X span, and return HotspotDef[]
 function buildPiso(
   segments: Array<{ lotes: string[]; relW: number }>,
   stairs_relW: number,
@@ -113,10 +127,13 @@ function buildPiso(
     ...segments.slice(stairsAfterIdx + 1),
   ];
   const totalRel = allSegs.reduce((s, seg) => s + seg.relW, 0);
-  const pxPerRel = SPAN / totalRel;
+  const xLeft  = piso === '1' ? P1_X_LEFT  : P2_X_LEFT;
+  const xRight = piso === '1' ? P1_X_RIGHT : P2_X_RIGHT;
+  const span   = xRight - xLeft;
+  const pxPerRel = span / totalRel;
 
   const hotspots: HotspotDef[] = [];
-  let x = X_LEFT;
+  let x = xLeft;
   for (const seg of allSegs) {
     const w = seg.relW * pxPerRel;
     if (seg.lotes.length > 0) {
