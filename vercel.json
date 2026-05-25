@@ -1,7 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd plaza-aria && npm install && npm run build",
-  "outputDirectory": "plaza-aria/.next",
-  "installCommand": "cd plaza-aria && npm install",
-  "framework": "nextjs"
-}
