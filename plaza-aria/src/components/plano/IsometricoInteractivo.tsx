@@ -148,43 +148,46 @@ function IsometricoInner({
           aria-hidden={!debug}
           role={debug ? 'img' : undefined}
         >
-          {/* ── Debug grid: image-space coordinate ruler ─────────────────────
-              Dibuja líneas cada 100 px (y) y 200 px (x) en el espacio 2528×1684
-              con etiquetas numéricas, para que se pueda leer la posición de
-              cualquier punto del edificio sin depender de eventos del mouse. */}
+          {/* ── Debug grid (high contrast, impossible to miss) ─────────────── */}
           {debug && (
             <g pointerEvents="none">
-              {/* Vertical grid lines every 200 image-px */}
+              {/* Vertical solid lines every 200 image-px */}
               {Array.from({ length: Math.floor(IMG_W / 200) + 1 }, (_, i) => i * 200).map((x) => (
                 <line key={`gx-${x}`}
                       x1={x} y1={0} x2={x} y2={IMG_H}
-                      stroke="#0066FF" strokeOpacity="0.35" strokeWidth={1}
-                      strokeDasharray="6 6"
+                      stroke="#FF0000" strokeWidth={3}
                       vectorEffect="non-scaling-stroke" />
               ))}
-              {/* Horizontal grid lines every 100 image-px */}
+              {/* Horizontal solid lines every 100 image-px */}
               {Array.from({ length: Math.floor(IMG_H / 100) + 1 }, (_, i) => i * 100).map((y) => (
                 <line key={`gy-${y}`}
                       x1={0} y1={y} x2={IMG_W} y2={y}
-                      stroke="#0066FF" strokeOpacity="0.35" strokeWidth={1}
-                      strokeDasharray="6 6"
+                      stroke="#FF0000" strokeWidth={3}
                       vectorEffect="non-scaling-stroke" />
               ))}
-              {/* X labels along the top */}
+              {/* X labels (yellow box + black text) along the top */}
               {Array.from({ length: Math.floor(IMG_W / 200) + 1 }, (_, i) => i * 200).map((x) => (
-                <text key={`gxl-${x}`} x={x + 6} y={36}
-                      fontSize={28} fontFamily="monospace" fontWeight={700}
-                      fill="#0066FF" fillOpacity="0.85">
-                  {x}
-                </text>
+                <g key={`gxl-${x}`}>
+                  <rect x={x + 2} y={4} width={80} height={40} fill="#FFFF00" stroke="#000" strokeWidth={2}
+                        vectorEffect="non-scaling-stroke" />
+                  <text x={x + 6} y={32}
+                        fontSize={32} fontFamily="monospace" fontWeight={900}
+                        fill="#000">
+                    {x}
+                  </text>
+                </g>
               ))}
-              {/* Y labels along the left side */}
+              {/* Y labels (yellow box + black text) along the left */}
               {Array.from({ length: Math.floor(IMG_H / 100) + 1 }, (_, i) => i * 100).map((y) => (
-                <text key={`gyl-${y}`} x={8} y={y - 6}
-                      fontSize={24} fontFamily="monospace" fontWeight={700}
-                      fill="#0066FF" fillOpacity="0.85">
-                  {y}
-                </text>
+                <g key={`gyl-${y}`}>
+                  <rect x={2} y={y + 2} width={90} height={36} fill="#FFFF00" stroke="#000" strokeWidth={2}
+                        vectorEffect="non-scaling-stroke" />
+                  <text x={6} y={y + 30}
+                        fontSize={28} fontFamily="monospace" fontWeight={900}
+                        fill="#000">
+                    y={y}
+                  </text>
+                </g>
               ))}
             </g>
           )}
@@ -305,10 +308,10 @@ function IsometricoInner({
           })}
         </svg>
 
-        {/* Debug legend */}
+        {/* Debug legend + build marker (so we KNOW which deploy is rendering) */}
         {debug && (
-          <div className="absolute bottom-3 left-3 bg-white/90 text-xs p-2 rounded font-mono text-slate-700 shadow z-20">
-            🔵 = hotspot outline &nbsp;|&nbsp; ?debug=1 active
+          <div className="absolute bottom-3 left-3 bg-white/95 text-xs p-2 rounded font-mono text-slate-700 shadow z-20 border-2 border-red-500">
+            🔴 GRID v7 &nbsp;|&nbsp; ?debug=1 active &nbsp;|&nbsp; build=2025-iter7
           </div>
         )}
 
