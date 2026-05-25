@@ -310,8 +310,10 @@ function IsometricoInner({
 
         {/* Debug legend + build marker (so we KNOW which deploy is rendering) */}
         {debug && (
-          <div className="absolute bottom-3 left-3 bg-white/95 text-xs p-2 rounded font-mono text-slate-700 shadow z-20 border-2 border-red-500">
-            🔴 GRID v7 &nbsp;|&nbsp; ?debug=1 active &nbsp;|&nbsp; build=2025-iter7
+          <div className="absolute bottom-3 left-3 bg-white/95 text-sm p-3 rounded font-mono text-slate-700 shadow z-20 border-2 border-red-500 max-w-md">
+            <div className="font-bold text-red-600">🔴 GRID v14 — build=2026-iter14</div>
+            <div className="mt-1">Pasa el cursor sobre la imagen. Lee las coordenadas (x, y) en el cuadro azul superior derecho.</div>
+            <div className="mt-1">Dame las 4 esquinas de L1 (orden: abajo-izq, abajo-der, arriba-der, arriba-izq).</div>
           </div>
         )}
 
@@ -319,8 +321,8 @@ function IsometricoInner({
         {debug && (
           <div
             className="absolute top-3 right-3 z-30 pointer-events-none select-none
-                       bg-black/85 text-[#00B4FF] font-mono text-base px-4 py-2 rounded-md
-                       shadow-lg border border-[#00B4FF]/40 min-w-[180px] text-center"
+                       bg-black text-[#00B4FF] font-mono text-2xl font-bold px-5 py-3 rounded-md
+                       shadow-2xl border-4 border-[#00B4FF] min-w-[260px] text-center"
           >
             {mousePos && containerRef.current ? (() => {
               const rect = containerRef.current.getBoundingClientRect();
@@ -328,7 +330,7 @@ function IsometricoInner({
               const iy = Math.round(mousePos.y / rect.height * IMG_H);
               return <span>x={ix} &nbsp; y={iy}</span>;
             })() : (
-              <span className="text-white/60 text-xs">Mueve el cursor sobre la imagen</span>
+              <span className="text-white/70 text-base">Mueve el cursor sobre la imagen</span>
             )}
           </div>
         )}
