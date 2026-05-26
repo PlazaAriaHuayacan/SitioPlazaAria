@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { listLocales, listEventos } from '@/lib/airtable/client';
 import { IsometricoInteractivo } from '@/components/plano/IsometricoInteractivo';
+import { LocalesDisponiblesGrid } from '@/components/plano/LocalesDisponiblesGrid';
 import { agruparPorUnidad } from '@/lib/plano/agrupar';
 import type { Local, Evento } from '@/types/domain';
 
@@ -161,20 +162,39 @@ export default async function RentaPage() {
         </div>
       </section>
 
-      {/* ── 3. Plano interactivo ──────────────────────────────────────────── */}
-      <section id="disponibles" className="py-16 bg-aria-bone scroll-mt-20">
+      {/* ── 3. Plano (decorativo) ─────────────────────────────────────────── */}
+      <section className="py-16 bg-aria-bone">
         <div className="container-aria">
           <p className="eyebrow">El plano</p>
           <h2 className="mt-2 font-display tracking-display text-4xl md:text-5xl text-aria-ink">
-            Explora Plaza Aria
+            Plaza Aria desde arriba
           </h2>
           <p className="mt-3 max-w-prose-aria text-aria-slate">
-            Haz click en un local para ver detalles. Los{' '}
-            <span className="text-aria-terracotta font-medium">resaltados en terracota</span>{' '}
-            están disponibles ahora mismo.
+            Dos pisos al aire libre con estacionamiento techado y comunidad ya
+            viva sobre Av. Huayacán. Abajo, los locales disponibles.
           </p>
           <div className="mt-10 rounded-card border border-aria-line/60 bg-white p-3 md:p-6 shadow-card">
-            <IsometricoInteractivo unidades={unidades} />
+            <IsometricoInteractivo />
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. Locales disponibles (tarjetas) ─────────────────────────────── */}
+      <section id="disponibles" className="py-16 bg-white scroll-mt-20">
+        <div className="container-aria">
+          <p className="eyebrow">Locales disponibles</p>
+          <h2 className="mt-2 font-display tracking-display text-4xl md:text-5xl text-aria-ink">
+            {disponibles.length === 0
+              ? 'Todos rentados — escríbenos para reservar'
+              : `${disponibles.length} ${disponibles.length === 1 ? 'local' : 'locales'} listos para tu concepto`}
+          </h2>
+          <p className="mt-3 max-w-prose-aria text-aria-slate">
+            Renta mensual, m² y servicios incluidos por local. Cuando uno te
+            interese, escríbenos por WhatsApp y te mandamos el contrato y los
+            siguientes pasos.
+          </p>
+          <div className="mt-10">
+            <LocalesDisponiblesGrid unidades={unidades} />
           </div>
         </div>
       </section>
